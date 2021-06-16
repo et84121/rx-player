@@ -40,8 +40,6 @@ export {
   IKeySystemOption,
   ISupplementaryTextTrackOption,
   ISupplementaryImageTrackOption,
-  IDefaultAudioTrackOption,
-  IDefaultTextTrackOption,
   INetworkConfigOption,
   IStartAtOption,
 } from "./option_utils";
