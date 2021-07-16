@@ -30,7 +30,7 @@ export enum MANIFEST_UPDATE_TYPE {
 }
 
 /** Every possible value for the Adaptation's `type` property. */
-export type IAdaptationType = "video" | "audio" | "text" | "image";
+export type IAdaptationType = "video" | "audio" | "text";
 
 export interface IHDRInformation {
   /**
@@ -65,8 +65,7 @@ export interface IExposedManifest {
    */
   adaptations : { audio? : IExposedAdaptation[];
                   video? : IExposedAdaptation[];
-                  text? : IExposedAdaptation[];
-                  image? : IExposedAdaptation[]; };
+                  text? : IExposedAdaptation[]; };
   isLive : boolean;
   transport : string;
 }
@@ -78,15 +77,14 @@ export interface IExposedPeriod {
   end? : number | undefined;
   adaptations : { audio? : IExposedAdaptation[];
                   video? : IExposedAdaptation[];
-                  text? : IExposedAdaptation[];
-                  image? : IExposedAdaptation[]; };
+                  text? : IExposedAdaptation[]; };
 }
 
 /** Adaptation (represents a track), as documented in the API documentation. */
 export interface IExposedAdaptation {
   /** String identifying the Adaptation, unique per Period. */
   id : string;
-  type : "video" | "audio" | "text" | "image";
+  type : "video" | "audio" | "text";
   language? : string | undefined;
   normalizedLanguage? : string | undefined;
   isAudioDescription? : boolean | undefined;

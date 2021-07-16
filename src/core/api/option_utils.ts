@@ -80,17 +80,6 @@ export interface ITransportOptions {
   serverSyncInfos? : IServerSyncInfos;
 }
 
-/**
- * External image (".bif") track we have to add to the Manifest once downloaded.
- * @deprecated
- */
-export interface ISupplementaryImageTrackOption {
-  /** URL the external image track can be found at. */
-  url : string;
-  /** Mime-type used to know the format of the image track. */
-  mimeType : string;
-}
-
 /** Value for the `networkConfig` option of the `loadVideo` method. */
 export interface INetworkConfigOption {
   /**
@@ -189,10 +178,6 @@ export interface ILoadVideoOptions {
   enableFastSwitching? : boolean;
   audioTrackSwitchingMode? : IAudioTrackSwitchingMode;
   onCodecSwitch? : "continue"|"reload";
-
-  /* eslint-disable import/no-deprecated */
-  supplementaryImageTracks? : ISupplementaryImageTrackOption[];
-  /* eslint-enable import/no-deprecated */
 }
 
 /**
@@ -613,32 +598,12 @@ function parseLoadVideoOptions(
   }
 
   const transportOptions = objectAssign({}, transportOptsArg, {
-    /* eslint-disable import/no-deprecated */
-    supplementaryImageTracks: [] as ISupplementaryImageTrackOption[],
-    /* eslint-enable import/no-deprecated */
     lowLatencyMode,
   });
 
   // remove already parsed data to simplify the `transportOptions` object
   delete transportOptions.initialManifest;
   delete transportOptions.minimumManifestUpdateInterval;
-
-  if (options.supplementaryImageTracks !== undefined) {
-    warnOnce("The `supplementaryImageTracks` loadVideo option is deprecated.\n" +
-             "Please use the `parseBifThumbnails` tool instead.");
-    const supplementaryImageTracks =
-      Array.isArray(options.supplementaryImageTracks) ?
-        options.supplementaryImageTracks : [options.supplementaryImageTracks];
-    for (const supplementaryImageTrack of supplementaryImageTracks) {
-      if (typeof supplementaryImageTrack.mimeType !== "string" ||
-          typeof supplementaryImageTrack.url !== "string"
-      ) {
-        throw new Error("Invalid supplementary image track given. " +
-                        "Missing either mimetype or url");
-      }
-    }
-    transportOptions.supplementaryImageTracks = supplementaryImageTracks;
-  }
 
   if (isNullOrUndefined(options.textTrackMode)) {
     textTrackMode = DEFAULT_TEXT_TRACK_MODE;
