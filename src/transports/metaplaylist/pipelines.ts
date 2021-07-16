@@ -128,7 +128,6 @@ export default function(options : ITransportOptions): ITransportPipelines {
   const otherTransportOptions = objectAssign({},
                                              options,
                                              { manifestLoader: undefined,
-                                               supplementaryTextTracks: [],
                                                supplementaryImageTracks: [] });
 
   const manifestPipeline = {
