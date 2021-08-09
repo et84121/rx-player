@@ -2245,7 +2245,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
 
     if (this._priv_contentEventsMemory.periodChange !== period) {
       this._priv_contentEventsMemory.periodChange = period;
-      this.trigger("periodChange", period);
+      this.trigger("periodChange", { start: period.start, end: period.end });
     }
 
     this.trigger("availableAudioTracksChange", this.getAvailableAudioTracks());
@@ -2678,6 +2678,11 @@ export interface IBitrateEstimate {
   bitrate : number | undefined;
 }
 
+export interface IPeriodAttributes {
+  start : number;
+  end? : number | undefined;
+}
+
 export type IStreamEvent = { data: IStreamEventData;
                              start: number;
                              end: number;
@@ -2698,7 +2703,7 @@ interface IPublicAPIEvent {
   volumeChange : number;
   error : ICustomError | Error;
   warning : ICustomError | Error;
-  periodChange : Period;
+  periodChange : IPeriodAttributes;
   availableAudioBitratesChange : number[];
   availableVideoBitratesChange : number[];
   availableAudioTracksChange : ITMAudioTrackListItem[];
