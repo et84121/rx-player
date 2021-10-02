@@ -49,5 +49,5 @@ export {
   ITMAudioTrack,
   ITMTextTrack,
   ITMVideoTrack,
-} from "./track_choice_manager";
+} from "./track_management";
 export default Player;

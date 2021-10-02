@@ -14,16 +14,7 @@
  * limitations under the License.
  */
 
-import PeriodStream, {
-  IPeriodStreamArguments,
-  IPeriodStreamOptions,
-  IPeriodStreamPlaybackObservation,
-} from "./period_stream";
+import TracksStore from "./tracks_store";
 
-export default PeriodStream;
-
-export {
-  IPeriodStreamArguments,
-  IPeriodStreamOptions,
-  IPeriodStreamPlaybackObservation,
-};
+export default TracksStore;
+export * from "./tracks_store";

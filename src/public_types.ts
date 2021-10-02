@@ -48,7 +48,6 @@ export {
   IPersistentSessionInfo,
   IPersistentSessionStorage,
 } from "./core/decrypt";
-export { IAudioTrackSwitchingMode } from "./core/stream";
 export { ICustomError as IPlayerError } from "./errors";
 export {
   IExposedAdaptation as IAdaptation,
