@@ -105,15 +105,6 @@ function calculateRepeat(
  */
 export interface ISmoothRepresentationIndexContextInformation {
   /**
-   * if `true`, the `SmoothRepresentationIndex` will return segments even if
-   * we're not sure they had time to be generated on the server side.
-   *
-   * TODO(Paul B.) This is a somewhat ugly option, only here for very specific
-   * Canal+ use-cases for now (most of all for Peer-to-Peer efficiency),
-   * scheduled to be removed in a next major version.
-   */
-  aggressiveMode : boolean;
-  /**
    * If `true` the corresponding Smooth Manifest was announced as a live
    * content.
    * `false` otherwise.
@@ -168,16 +159,6 @@ export default class SmoothRepresentationIndex implements IRepresentationIndex {
                                 protection? : { keyId : Uint8Array } | undefined; };
 
   /**
-   * if `true`, this class will return segments even if we're not sure they had
-   * time to be generated on the server side.
-   *
-   * This is a somewhat ugly option, only here for very specific Canal+
-   * use-cases for now (most of all for Peer-to-Peer efficiency), scheduled to
-   * be removed in a next major version.
-   */
-  private _isAggressiveMode : boolean;
-
-  /**
    * Value only calculated for live contents.
    *
    * Calculates the difference, in timescale, between the current time (as
@@ -221,8 +202,7 @@ export default class SmoothRepresentationIndex implements IRepresentationIndex {
   constructor(
     options : ISmoothRepresentationIndexContextInformation
   ) {
-    const { aggressiveMode,
-            isLive,
+    const { isLive,
             segmentPrivateInfos,
             media,
             sharedSmoothTimeline } = options;
@@ -238,7 +218,6 @@ export default class SmoothRepresentationIndex implements IRepresentationIndex {
                                width: segmentPrivateInfos.width,
                                protection: segmentPrivateInfos.protection };
 
-    this._isAggressiveMode = aggressiveMode;
     this._isLive = isLive;
     this._media = media;
 
@@ -280,7 +259,6 @@ export default class SmoothRepresentationIndex implements IRepresentationIndex {
     const { timescale, timeline } = this._sharedSmoothTimeline;
     const { up, to } = normalizeRange(timescale, from, dur);
     const media = this._media;
-    const isAggressive = this._isAggressiveMode;
 
     let currentNumber : number|undefined;
     const segments : ISegment[] = [];
@@ -297,8 +275,7 @@ export default class SmoothRepresentationIndex implements IRepresentationIndex {
       const repeat = calculateRepeat(segmentRange, timeline[i + 1]);
       let segmentNumberInCurrentRange = getSegmentNumber(start, up, duration);
       let segmentTime = start + segmentNumberInCurrentRange * duration;
-      const timeToAddToCheckMaxPosition = isAggressive ? 0 :
-                                                         duration;
+      const timeToAddToCheckMaxPosition = duration;
       while (segmentTime < to &&
              segmentNumberInCurrentRange <= repeat &&
              (maxPosition === undefined ||
@@ -397,7 +374,6 @@ export default class SmoothRepresentationIndex implements IRepresentationIndex {
 
   /**
    * Returns last position available in the index.
-   * @param {Object} index
    * @returns {Number}
    */
   getLastPosition() : number|undefined {
@@ -415,8 +391,7 @@ export default class SmoothRepresentationIndex implements IRepresentationIndex {
       const { start, duration, repeatCount } = timelineElt;
       for (let j = repeatCount; j >= 0; j--) {
         const end = start + (duration * (j + 1));
-        const positionToReach = this._isAggressiveMode ? end - duration :
-                                                         end;
+        const positionToReach = end;
         if (positionToReach <= timescaledNow - this._scaledLiveGap) {
           return end / timescale;
         }

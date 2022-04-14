@@ -55,8 +55,6 @@ interface IServerSyncInfos {
 
 /** Value of the `transportOptions` option of the `loadVideo` method. */
 export interface ITransportOptions {
-  /** Whether we can perform request for segments in advance. */
-  aggressiveMode? : boolean;
   /**
    * Whether we should check that an obtain segment is truncated and retry the
    * request if that's the case.

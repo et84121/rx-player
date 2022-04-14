@@ -424,7 +424,6 @@ interface IServerSyncInfos { serverTimestamp : number;
                              clientTime : number; }
 
 export interface ITransportOptions {
-  aggressiveMode? : boolean | undefined;
   checkMediaSegmentIntegrity? : boolean | undefined;
   lowLatencyMode : boolean;
   manifestLoader?: ICustomManifestLoader | undefined;
