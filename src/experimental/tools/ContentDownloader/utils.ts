@@ -16,10 +16,13 @@
 
 import { IDBPDatabase } from "idb";
 
-import { isSafari } from "../../../compat/browser_detection";
+import { isSafariDesktop, isSafariMobile } from "../../../compat/browser_detection";
 import arrayIncludes from "../../../utils/array_includes";
+import { base64ToBytes, bytesToBase64 } from "../../../utils/base64";
+import startsWith from "../../../utils/starts_with";
 import MediaCapabilitiesProber from "../mediaCapabilitiesProber";
 import { IMediaKeySystemConfiguration } from "../mediaCapabilitiesProber/types";
+import { IOfflineDBSchema } from "./api/db/dbSetUp";
 import { IActiveDownload } from "./api/tracksPicker/types";
 import { IDownloadArguments, IStoredManifest } from "./types";
 
@@ -68,7 +71,7 @@ export class IndexedDBError extends Error {
  */
 export async function checkInitDownloaderOptions(
   options: IDownloadArguments,
-  db: IDBPDatabase
+  db: IDBPDatabase<IOfflineDBSchema>
 ): Promise<string> {
   if (typeof options !== "object" || Object.keys(options).length < 0) {
     throw new ValidationArgsError(
@@ -135,7 +138,7 @@ const CENC_KEY_SYSTEMS = [
   "com.apple.fps.1_0",
   "com.chromecast.playready",
   "com.youtube.playready",
-];
+] as const;
 
 // Robustness ONLY FOR WIDEVINE
 const WIDEVINE_ROBUSTNESSES = [
@@ -144,7 +147,7 @@ const WIDEVINE_ROBUSTNESSES = [
   "HW_SECURE_CRYPTO",
   "SW_SECURE_DECODE",
   "SW_SECURE_CRYPTO",
-];
+] as const;
 
 /**
  * Construct the necessary configuration for getCompatibleDRMConfigurations() Prober tool
@@ -170,29 +173,33 @@ export function getKeySystemConfigurations(
 ): IMediaKeySystemConfiguration {
   const videoCapabilities: MediaKeySystemMediaCapability[] = [];
   const audioCapabilities: MediaKeySystemMediaCapability[] = [];
-  const robustnesses =
-    keySystem === "com.widevine.alpha"
-      ? WIDEVINE_ROBUSTNESSES
-      : [undefined, undefined, undefined, undefined];
 
-  robustnesses.forEach((robustness: string | undefined) => {
-    videoCapabilities.push({
-      contentType: "video/mp4;codecs='avc1.4d401e'", // standard mp4 codec
-      robustness,
+  if (keySystem === "com.widevine.alpha") {
+    const robustnesses = WIDEVINE_ROBUSTNESSES;
+    robustnesses.forEach((robustness) => {
+      videoCapabilities.push({
+        contentType: "video/mp4;codecs='avc1.4d401e'", // standard mp4 codec
+        robustness,
+      });
+      videoCapabilities.push({
+        contentType: "video/mp4;codecs='avc1.42e01e'",
+        robustness,
+      });
+      videoCapabilities.push({
+        contentType: "video/webm;codecs='vp8'",
+        robustness,
+      });
+      audioCapabilities.push({
+        contentType: "audio/mp4;codecs='mp4a.40.2'", // standard mp4 codec
+        robustness,
+      });
     });
-    videoCapabilities.push({
-      contentType: "video/mp4;codecs='avc1.42e01e'",
-      robustness,
-    });
-    videoCapabilities.push({
-      contentType: "video/webm;codecs='vp8'",
-      robustness,
-    });
-    audioCapabilities.push({
-      contentType: "audio/mp4;codecs='mp4a.40.2'", // standard mp4 codec
-      robustness,
-    });
-  });
+  }
+  else {
+    // TODO: maybe this should be remover
+    throw Error("unsupport DRM system");
+  }
+
 
   return {
     initDataTypes: ["cenc"],
@@ -203,15 +210,20 @@ export function getKeySystemConfigurations(
   };
 }
 
-function isFairplayDrmSupported(): boolean {
-  const MK = (window as any).WebKitMediaKeys as {
+
+interface ISafariWindowObject  extends Window {
+  WebKitMediaKeys : {
     isTypeSupported: (drm: string, applicationType: string) => boolean;
   };
+}
+
+function isFairplayDrmSupported(): boolean {
+  const MediaKeys = (window as unknown as ISafariWindowObject).WebKitMediaKeys;
   const drm = "com.apple.fps.1_0";
   return (
-    MK !== undefined &&
-    MK.isTypeSupported !== undefined &&
-    MK.isTypeSupported(drm, "video/mp4")
+    MediaKeys !== undefined &&
+    MediaKeys.isTypeSupported !== undefined &&
+    MediaKeys.isTypeSupported(drm, "video/mp4")
   );
 }
 
@@ -222,7 +234,7 @@ function isFairplayDrmSupported(): boolean {
  *
  */
 export async function isPersistentLicenseSupported(): Promise<boolean> {
-  if (isSafari && isFairplayDrmSupported()) {
+  if (isSafariDesktop && isSafariMobile && isFairplayDrmSupported()) {
     // We dont support (HLS/Fairplay) streaming right now :(
     return false;
   }
@@ -233,4 +245,37 @@ export async function isPersistentLicenseSupported(): Promise<boolean> {
   return drmConfigs.some(
     drmConfig => drmConfig.compatibleConfiguration !== undefined
   );
+}
+
+/**
+ * 特別處理 Uint8Array 的 JSON.stringify
+ * @param value
+ * @returns
+ */
+export function serialize(value: unknown) {
+  return JSON.stringify(value, function(_k, v) {
+    if (v instanceof Uint8Array) {
+      return "base64:Base64::"  + bytesToBase64(v);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return v;
+  });
+}
+
+/**
+ * 特別處理 Uint8Array 的 JSON.parse
+ * @param value
+ * @returns
+ */
+export function deserialize(value: string) {
+
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+  return JSON.parse(value, (_k, v) => {
+    if (typeof v === "string" && startsWith(v, "base64:Base64::")) {
+      return base64ToBytes(v.slice(15));
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
+    return v;
+  });
 }

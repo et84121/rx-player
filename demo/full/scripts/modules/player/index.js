@@ -67,6 +67,10 @@ const PLAYER = ({ $destroy, state }, initOpts) => {
   window.RxPlayer = RxPlayer;
   window.player = window.rxPlayer = player;
 
+  window.ContentDownloader = ContentDownloader;
+
+  ContentDownloader.addParsers([DASH]);
+
   // initial state. Written here to easily showcase it exhaustively
   state.set({
     audioBitrate: undefined,

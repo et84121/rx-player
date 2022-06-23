@@ -29,14 +29,14 @@
     "build:all": "npm run build && npm run build:min && npm run build:wasm:release && npm run build:modular",
     "build:min": "webpack --progress --config webpack.config.js --env minify --env production",
     "build:min:report": "webpack --progress --config webpack.config.js --env minify --env production --env reportSize",
-    "build:modular": "./scripts/build/generate_build.js",
+    "build:modular": "node ./scripts/build/generate_build.js",
     "build:report": "webpack --progress --config webpack.config.js --env production --env reportSize",
     "build:rxp:all": "npm run build && npm run build:min && npm run build:modular",
     "build:watch": "webpack --progress --config webpack.config.js -w --env production",
     "build:min:watch": "webpack --progress --config webpack.config.js -w --env production --env minify",
     "build:wasm:debug": "cd ./src/parsers/manifest/dash/wasm-parser && cargo build --target wasm32-unknown-unknown && cp target/wasm32-unknown-unknown/debug/mpd_node_parser.wasm ../../../../../dist/mpd-parser.wasm",
     "build:wasm:release": "cd ./src/parsers/manifest/dash/wasm-parser && cargo build --target wasm32-unknown-unknown --release && wasm-opt -O3 -o ../../../../../dist/mpd-parser.wasm target/wasm32-unknown-unknown/release/mpd_node_parser.wasm && cd ../../../../../ && npm run wasm-strip",
-    "certificate": "./scripts/generate_certificate",
+    "certificate": "sh ./scripts/generate_certificate",
     "check": "npm run check:types && npm run lint",
     "check:all": "npm run check:types && npm run lint && npm run lint:demo && npm run lint:tests && npm run test:unit && npm run test:integration && npm run test:memory && node -r esm ./scripts/check_nodejs_import_compatibility.js",
     "check:appveyor": "npm run check:types && npm run lint && npm run lint:demo && npm run lint:tests && npm run test:appveyor",
@@ -77,7 +77,7 @@
     "url": "git://github.com/canalplus/rx-player.git"
   },
   "dependencies": {
-    "idb": "4.0.3",
+    "idb": "^7.0.1",
     "next-tick": "1.1.0",
     "rxjs": "7.4.0"
   },
@@ -130,6 +130,7 @@
     "tslint": "6.1.3",
     "typescript": "4.7.3",
     "webpack": "5.73.0",
+    "type-fest": "^2.12.2",
     "webpack-bundle-analyzer": "4.5.0",
     "webpack-cli": "4.10.0"
   },

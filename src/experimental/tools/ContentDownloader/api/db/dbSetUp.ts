@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { IDBPDatabase, openDB } from "idb";
+import { IDBPDatabase, openDB, DBSchema } from "idb";
 import { IndexedDBError } from "../../utils";
-
-import PPromise from "../../../../../utils/promise";
+import { ISegmentStored } from "../downloader/types";
+import { IStoredContentProtection } from "../drm/types";
 
 /**
  * A very short function to know if IndexedDB is supported by the current browser.
@@ -27,6 +27,30 @@ import PPromise from "../../../../../utils/promise";
  */
 export const isIndexedDBSupported = (): boolean => "indexedDB" in window;
 
+
+export interface IOfflineDBSchema extends DBSchema {
+  manifests: {
+    value: {
+      contentID: string;
+      serializePayload: string;
+    };
+    key: string;
+  };
+  segments: {
+    value: ISegmentStored;
+    key: string;
+    indexes: { "contentID": string };
+  };
+
+  contentsProtection: {
+    value: IStoredContentProtection;
+    key: string;
+    indexes: { "contentID": string };
+  };
+
+}
+
+
 /**
  * Set up IndexedDB with few checks and creating tables
  *
@@ -34,8 +58,8 @@ export const isIndexedDBSupported = (): boolean => "indexedDB" in window;
  * @returns {Promise<IDBPDatabase>} A Promise with the IndexedDB instance.
  *
  */
-export function setUpDb(dbName: string): Promise<IDBPDatabase> {
-  return new PPromise((resolve, reject) => {
+export function setUpDb(dbName: string): Promise<IDBPDatabase<IOfflineDBSchema>> {
+  return new Promise((resolve, reject) => {
     if (!isIndexedDBSupported()) {
       return reject(
         new IndexedDBError("IndexedDB is not supported in your browser")
@@ -43,14 +67,18 @@ export function setUpDb(dbName: string): Promise<IDBPDatabase> {
     }
 
     return resolve(
-      openDB(dbName, 1, {
+      openDB<IOfflineDBSchema>(dbName, 1, {
         upgrade(db) {
-          db.createObjectStore("manifests", {
-            keyPath: "contentID",
-          });
-          const segmentObjStore = db.createObjectStore("segments", {
-            keyPath: "segmentKey", // concat 'time--representationID'
-          });
+          db.createObjectStore(
+            "manifests",
+            {
+              keyPath: "contentID",
+            });
+          const segmentObjStore = db.createObjectStore(
+            "segments",
+            {
+              keyPath: "segmentKey", // concat 'time--representationID'
+            });
           const contentsProtectionObjStore = db.createObjectStore(
             "contentsProtection",
             {

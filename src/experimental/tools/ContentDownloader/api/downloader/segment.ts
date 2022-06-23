@@ -14,15 +14,22 @@
  * limitations under the License.
  */
 
-import { EMPTY, merge, Observable, of, Subject } from "rxjs";
+import { EMPTY, merge, Observable, of } from "rxjs";
 import { distinct, map, mergeMap, reduce, scan, takeUntil, tap } from "rxjs/operators";
 
-import { ISegmentParserResponse } from "../../../../../transports";
-import find from "../../../../../utils/array_find";
-import findIndex from "../../../../../utils/array_find_index";
-import { concat, strToBytes } from "../../../../../utils/byte_parsing";
-
 import { createBox } from "../../../../../parsers/containers/isobmff";
+import { ISegmentParser } from "../../../../../transports";
+
+// generic segment parser response
+// export type ISegmentParserResponse<T> =
+//   ISegmentParserInitSegment<T> |
+//   ISegmentParserSegment<T>;
+
+
+// import find from "../../../../../utils/array_find";
+import findIndex from "../../../../../utils/array_find_index";
+import { concat } from "../../../../../utils/byte_parsing";
+
 import { IndexedDBError } from "../../utils";
 import { ContentType } from "../tracksPicker/types";
 import {
@@ -36,8 +43,34 @@ import {
   IManifestDBState,
   ISegmentData,
   ISegmentPipelineContext,
-  IUtils
+  IUtils,
 } from "./types";
+
+
+/**
+ * 已廢棄之函式，哪天要移除
+ * 可以改用下列 fn 取代
+ * https://developers.canal-plus.com/rx-player/doc/api/Tools/StringUtils.html
+ *
+ * Convert a simple string to an Uint8Array containing the corresponding
+ * UTF-8 code units.
+ * /!\ its implementation favors simplicity and performance over accuracy.
+ * Each character having a code unit higher than 255 in UTF-16 will be
+ * truncated (real value % 256).
+ * Please take that into consideration when calling this function.
+ * @deprecated
+ * @param {string} str
+ * @returns {Uint8Array}
+ */
+function strToBytes(str : string) : Uint8Array {
+  const len = str.length;
+  const arr = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    arr[i] = str.charCodeAt(i) & 0xFF;
+  }
+  return arr;
+}
+
 
 /**
  * Download a segment associated with a context.
@@ -68,7 +101,7 @@ export function handleSegmentPipelineFromContexts<
 ): Observable<ICustomSegment> {
   const segmentFetcherForCurrentContentType = segmentPipelineCreator.createSegmentFetcher(
     contentType,
-    new Subject()
+    {}
   );
   return of(...ctxs).pipe(
     mergeMap(
@@ -77,50 +110,47 @@ export function handleSegmentPipelineFromContexts<
           return EMPTY;
         }
         return segmentFetcherForCurrentContentType.createRequest(ctx, 0).pipe(
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
           mergeMap(evt => {
             switch (evt.type) {
               case "chunk":
-                return evt.parse();
+                return of(evt.parse()) ;
               default:
                 return EMPTY;
             }
           }),
-          reduce<ISegmentParserResponse<Uint8Array | string>, ISegmentData>(
+          reduce<ReturnType<ISegmentParser<unknown, unknown>> , ISegmentData>(
             (acc, currSegparserResp) => {
               // For init segment...
-              if (currSegparserResp.type === "parsed-init-segment") {
+              if (currSegparserResp.segmentType === "init") {
                 const {
                   initializationData,
-                  segmentProtections,
-                } = currSegparserResp.value;
+                  // protectionDataUpdate,
+                } = currSegparserResp;
+                const segmentProtections = ctx.representation.contentProtections;
+
+                // give contentProtections default value
                 if (
-                  acc.contentProtection === undefined &&
+                  acc.contentProtections === undefined &&
                   segmentProtections !== null
                 ) {
-                  acc.contentProtection = new Uint8Array(0);
+                  acc.contentProtections = {
+                    keyIds: undefined,
+                    initData: [],
+                  };
                 }
-                if (currSegparserResp.value.initializationData === null) {
+                if (currSegparserResp.initializationData === null) {
                   return acc;
                 }
-                // create segment init concatened with segment protection cenc.
                 if (
-                  acc.contentProtection !== undefined &&
-                  segmentProtections !== null &&
-                  segmentProtections.length > 0
+                  acc.contentProtections !== undefined &&
+                  segmentProtections !== undefined
                 ) {
-                  const cencContentProtection = find(
-                    segmentProtections,
-                    segmentProtection => segmentProtection.type === "cenc"
-                  )?.data;
-                  if (cencContentProtection !== undefined) {
-                    return {
-                      data: concat(acc.data, initializationData as Uint8Array),
-                      contentProtection: concat(
-                        acc.contentProtection,
-                        cencContentProtection
-                      ),
-                    };
-                  }
+                  return {
+                    data: concat(acc.data, initializationData as Uint8Array),
+                    contentProtections: segmentProtections
+                    ,
+                  };
                 }
                 return {
                   ...acc,
@@ -128,10 +158,12 @@ export function handleSegmentPipelineFromContexts<
                 };
               }
               // For simple segment
-              const { chunkData } = currSegparserResp.value;
+              const { chunkData } = currSegparserResp;
               if (chunkData === null) {
                 return acc;
               }
+
+              // For Text segment
               if (
                 contentType === ContentType.TEXT &&
                 ctx.representation.mimeType !== undefined &&
@@ -154,11 +186,7 @@ export function handleSegmentPipelineFromContexts<
           ),
           map(chunkData => {
             if (nextSegments !== undefined && !isInitData) {
-              (nextSegments[index] as any) = [
-                ctx.segment.time,
-                ctx.segment.timescale,
-                ctx.segment.duration,
-              ];
+              (nextSegments[index]) = ctx.segment;
             }
             return {
               chunkData,
@@ -169,7 +197,7 @@ export function handleSegmentPipelineFromContexts<
               index,
               isInitData,
               nextSegments,
-              representationID: ctx.representation.id as string,
+              representationID: ctx.representation.id ,
             };
           })
         );
@@ -223,11 +251,11 @@ function handleAbstractSegmentPipelineContextFor(
  * - Emit a global progress when a segment has been downloaded.
  * - Eventually, wait an event of the pause$ Subject to put the download in pause.
  *
- * @param Observable<IInitGroupedSegments> - A Observable that carry
+ * @param {Observable<IInitGroupedSegments>} builderObs$ - A Observable that carry
  * all the data we need to start the download.
- * @param IManifestDBState - The current builder state of the download.
- * @param IUtils - Usefull tools to store/emit/pause the current content of the download.
- * @returns IManifestDBState - The state of the Manifest at the X time in the download.
+ * @param {IManifestDBState} builderInit - The current builder state of the download.
+ * @param {IUtils} - Usefull tools to store/emit/pause the current content of the download.
+ * @returns {IManifestDBState} - The state of the Manifest at the X time in the download.
  *
  */
 export function segmentPipelineDownloader$(
@@ -280,14 +308,14 @@ export function segmentPipelineDownloader$(
         },
         contentType,
       }) => {
-        const timeScaled = (time / timescale) * 1000;
+        const timeScaled = (time / timescale);
         db.put("segments", {
           contentID,
           segmentKey: `${timeScaled}--${representationID}--${contentID}`,
           data: chunkData.data,
           size: chunkData.data.byteLength,
         }).catch((err: Error) => {
-           onError?.(new IndexedDBError(`
+          onError?.(new IndexedDBError(`
             ${contentID}: Impossible
             to store the current segment (${contentType}) at ${timeScaled}: ${err.message}
           `));
@@ -325,6 +353,7 @@ export function segmentPipelineDownloader$(
         );
         if (indexRepresentation === -1) {
           acc[contentType].push({
+            chunkData,
             nextSegments,
             period: ctx.period,
             adaptation: ctx.adaptation,
@@ -334,6 +363,7 @@ export function segmentPipelineDownloader$(
           return { ...acc, manifest: ctx.manifest };
         }
         acc[contentType][indexRepresentation] = {
+          chunkData,
           nextSegments,
           period: ctx.period,
           adaptation: ctx.adaptation,

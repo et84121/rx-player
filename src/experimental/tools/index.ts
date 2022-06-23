@@ -19,7 +19,6 @@ import createMetaplaylist from "./createMetaplaylist";
 import mediaCapabilitiesProber from "./mediaCapabilitiesProber";
 import parseBifThumbnails from "./parseBIFThumbnails";
 import VideoThumbnailLoader from "./VideoThumbnailLoader";
-import TextTrackRenderer from "./TextTrackRenderer";
 
 export {
   ContentDownloader,
@@ -27,5 +26,4 @@ export {
   mediaCapabilitiesProber,
   parseBifThumbnails,
   VideoThumbnailLoader,
-  TextTrackRenderer,
 };

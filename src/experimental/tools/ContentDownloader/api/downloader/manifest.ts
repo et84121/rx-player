@@ -17,17 +17,18 @@
 import { Observable } from "rxjs";
 import { filter, map, mergeMap } from "rxjs/operators";
 
-import features from "../../../../../features/";
-
-import { IPersistentSessionInfo } from "../../../../../core/eme";
+import { IPersistentSessionInfo } from "../../../../../core/decrypt";
 import createManifestFetcher, {
   IManifestFetcherParsedResult,
   IManifestFetcherResponse,
-} from "../../../../../core/fetchers/manifest/create_manifest_fetcher";
-import Manifest, { ISegment } from "../../../../../manifest";
+} from "../../../../../core/fetchers/manifest/manifest_fetcher";
+import features from "../../../../../features/";
+import logger from "../../../../../log";
+import Manifest from "../../../../../manifest";
 import { takePSSHOut } from "../../../../../parsers/containers/isobmff";
 import { ILocalManifest } from "../../../../../parsers/manifest/local";
 import {
+  IContentProtections,
   ILocalAdaptation,
   ILocalIndexSegment,
   ILocalPeriod,
@@ -36,7 +37,7 @@ import {
 import { ITransportPipelines } from "../../../../../transports";
 import { IStoredManifest } from "../../types";
 import { SegmentConstuctionError } from "../../utils";
-import { IContentProtection } from "../drm/types";
+import { IStoredContentProtection } from "../drm/types";
 import {
   ContentBufferType,
   IAdaptationForPeriod,
@@ -78,7 +79,8 @@ export function manifestLoader(
   transport: string
 ): Observable<{ manifest: Manifest; transportPipelines: ITransportPipelines }> {
   const transportPipelines = getTransportPipelineByTransport(transport);
-  const manifestPipeline = createManifestFetcher(
+  const manifestPipeline = new createManifestFetcher(
+    undefined,
     transportPipelines,
     {
       lowLatencyMode: false,
@@ -86,12 +88,12 @@ export function manifestLoader(
       maxRetryOffline: 5,
     }
   );
-  return manifestPipeline
-  .fetch(manifestURL)
-  .pipe(
+  return manifestPipeline.fetch(manifestURL).pipe(
     filter((evt): evt is IManifestFetcherResponse => evt.type === "response"),
-    mergeMap((response) => response.parse({ previousManifest: null, unsafeMode: false })),
-    filter((res): res is IManifestFetcherParsedResult  => res.type === "parsed"),
+    mergeMap((response) =>
+      response.parse({ previousManifest: null, unsafeMode: false })
+    ),
+    filter((res): res is IManifestFetcherParsedResult => res.type === "parsed"),
     map(({ manifest }) => ({ manifest, transportPipelines }))
   );
 }
@@ -107,49 +109,52 @@ export function manifestLoader(
 export function getBuilderFormattedForAdaptations({
   builder,
 }: Pick<IStoredManifest, "builder">): IAdaptationForPeriod {
-  return Object.keys(builder).reduce<IAdaptationForPeriod>(
-    (acc, curr) => {
-      const ctxs = builder[curr as ContentBufferType];
-      if (ctxs == null || ctxs.length === 0) {
-        return acc;
-      }
-      for (let i = 0; i <= ctxs.length; i++) {
-        const ctx = ctxs[i];
-        const periodId = ctx.period.id;
-        if (acc[periodId] === undefined) {
-          acc[periodId] = [];
-          acc[periodId].push({
-            type: ctx.adaptation.type as ContentBufferType,
-            audioDescription: ctx.adaptation.isAudioDescription,
-            closedCaption: ctx.adaptation.isClosedCaption,
-            language: ctx.adaptation.language,
-            representations: [ctx.representation],
-          });
-          return acc;
-        }
+  return Object.keys(builder).reduce<IAdaptationForPeriod>((acc, curr) => {
+    const ctxs = builder[curr as ContentBufferType];
+    if (ctxs == null || ctxs.length === 0) {
+      return acc;
+    }
+    for (let i = 0; i <= ctxs.length; i++) {
+      const ctx = ctxs[i];
+      const periodId = ctx.period.id;
+      if (acc[periodId] === undefined) {
+        acc[periodId] = [];
         acc[periodId].push({
           type: ctx.adaptation.type as ContentBufferType,
-          audioDescription: ctx.adaptation.isAudioDescription,
-          closedCaption: ctx.adaptation.isClosedCaption,
-          language: ctx.adaptation.language,
-          representations: [ctx.representation].map<any>((value) => {
-            return {
-              ...value,
-              contentProtections: {
-                keyIds: value.contentProtections?.keyIds || [],
-                initData: {
-                  cenc: takePSSHOut(ctx.chunkData?.contentProtection || new Uint8Array()),
-                },
-              },
-            };
-          }),
+          audioDescription: ctx.adaptation.isAudioDescription ?? false,
+          closedCaption: ctx.adaptation.isClosedCaption ?? false,
+          language: ctx.adaptation.language ?? "",
+          representations: [ctx.representation],
         });
         return acc;
       }
+      acc[periodId].push({
+        type: ctx.adaptation.type as ContentBufferType,
+        audioDescription: ctx.adaptation.isAudioDescription ?? false,
+        closedCaption: ctx.adaptation.isClosedCaption ?? false,
+        language: ctx.adaptation.language ?? "",
+        representations: [ctx.representation].map((value) => {
+
+          value.contentProtections = {
+            keyIds: value.contentProtections?.keyIds || undefined,
+            initData: [
+              {
+                type: "cenc",
+                values:
+                  takePSSHOut(
+                    ctx.chunkData.data
+                  )
+                ,
+              },
+            ],
+          };
+          return value;
+        }),
+      });
       return acc;
-    },
-    {}
-  );
+    }
+    return acc;
+  }, {});
 }
 
 /**
@@ -164,65 +169,46 @@ export function getBuilderFormattedForAdaptations({
 export function getBuilderFormattedForSegments({
   builder,
 }: Pick<IStoredManifest, "builder">) {
-  return Object.keys(builder).reduce<ISegmentForRepresentation>(
-    (acc, curr) => {
-      const ctxs = builder[curr as ContentBufferType];
-      if (ctxs == null || ctxs.length === 0) {
-        return acc;
-      }
-      for (let i = 0; i <= ctxs.length; i++) {
-        const ctx = ctxs[i];
-        const repreId = ctx.representation.id as string;
-        acc[repreId] = (ctx.nextSegments as Array<ISegment | [number, number, number]>)
-          .reduce<ILocalIndexSegment[]>(
-            (accSegts, currSegment) => {
-              if (Array.isArray(currSegment)) {
-                const [time, timescale, duration] = currSegment;
-                accSegts.push({
-                  time: (time / timescale) * 1000,
-                  duration: (duration / timescale) * 1000,
-                });
-                return accSegts;
-              }
+  return Object.keys(builder).reduce<ISegmentForRepresentation>((acc, curr) => {
+    const ctxs = builder[curr as ContentBufferType];
+    if (ctxs == null || ctxs.length === 0) {
+      return acc;
+    }
+    for (let i = 0; i <= ctxs.length; i++) {
+      const ctx = ctxs[i];
+      const repreId = ctx.representation.id;
+      acc[repreId] =
+        ctx.nextSegments
+          .reduce<ILocalIndexSegment[]>((accSegts, currSegment) => {
+            const { time, timescale, duration } = currSegment;
+            accSegts.push({
+              time: (time / timescale) ,
+              duration: (duration / timescale) ,
+            });
             return accSegts;
           }, []);
-        return acc;
-      }
       return acc;
-    },
-    {}
-  );
+    }
+    return acc;
+  }, {});
 }
 
 /**
- * Get the segments for the current representation.
- *
- * @param {Pick<IStoredManifest, "builder">} builder The global builder context for each
- * bufferType we insert in IndexedDB
- * @returns {ISegmentForRepresentation} Representation associated
- *  with an array of segments.
  *
  */
 export function getKeySystemsSessionsOffline(
-  contentsProtection : IContentProtection[] | undefined
+  storedContentsProtections?: IStoredContentProtection[]
 ) {
-  if (contentsProtection === undefined || contentsProtection.length === 0) {
+  if (storedContentsProtections === undefined || storedContentsProtections.length === 0) {
     return undefined;
   }
-  const flattenedSessionsIDS = contentsProtection
-    .reduce<{ sessionsIDS: IPersistentSessionInfo[]; type: string}>((acc, curr) => {
-    acc.type = curr.keySystems.type;
-    for (let i = 0; i < curr.keySystems.sessionsIDS.length; ++i) {
-      acc.sessionsIDS.push(...curr.keySystems.sessionsIDS);
-    }
-    return acc;
-  }, { type: "", sessionsIDS: [] });
+  const flattenedStoredContentsProtections = storedContentsProtections.reduce<IPersistentSessionInfo[]>((acc, curr) => {
+    return acc.concat(curr.persistentSessionInfo);
+  }, []);
+
   return {
-    ...flattenedSessionsIDS,
-    sessionsIDS: flattenedSessionsIDS.sessionsIDS
-      .filter((sessionID, index) =>
-        flattenedSessionsIDS.sessionsIDS
-          .map(session => session.initData).indexOf(sessionID.initData) === index),
+    drmType: storedContentsProtections[0].drmType,
+    storedContentsProtections: flattenedStoredContentsProtections,
   };
 }
 
@@ -251,12 +237,14 @@ export function offlineManifestLoader(
 ): ILocalManifest {
   return {
     type: "local",
-    version: "0.1",
-    duration,
+    version: "0.2",
+    minimumPosition: 0,
+    maximumPosition: duration,
     periods: manifest.periods.map<ILocalPeriod>((period): ILocalPeriod => {
       return {
         start: period.start,
-        duration: period.duration !== undefined ? period.duration : Number.MAX_VALUE,
+        end:
+          period.duration !== undefined ? period.duration : Number.MAX_VALUE,
         adaptations: adaptations[period.id].map(
           (adaptation): ILocalAdaptation => ({
             type: adaptation.type,
@@ -269,57 +257,70 @@ export function offlineManifestLoader(
                 codec,
                 id,
                 contentProtections,
-                ...representation }): ILocalRepresentation => ({
-                bitrate: representation.bitrate,
-                contentProtections,
-                mimeType: mimeType !== undefined ? mimeType : "",
-                codecs: codec !== undefined ? codec : "",
-                width: representation.width,
-                height: representation.height,
-                index: {
-                  loadInitSegment: ({ resolve, reject }) => {
-                    db.get(
-                      "segments",
-                      `init--${id}--${contentID}`
-                    )
-                      .then((segment: ISegmentStored | undefined) => {
-                        if (segment === undefined) {
-                          return reject(
-                            new SegmentConstuctionError(`${contentID}:
-                              Impossible to retrieve INIT segment in IndexedDB for
-                              representation: ${id}, got: undefined`
-                            )
-                          );
-                        }
-                        return resolve({
-                          data: segment.data,
-                        });
-                      })
-                      .catch(reject);
-                  },
-                  loadSegment: (
-                    { time: reqSegmentTime },
-                    { resolve, reject }
-                  ) => {
-                    db.get(
-                      "segments",
-                      `${reqSegmentTime}--${id}--${contentID}`
-                    )
-                      .then((segment: ISegmentStored | undefined) => {
-                        if (segment === undefined) {
+                ...representation
+              }): ILocalRepresentation => {
+
+                const localRepresentation: ILocalRepresentation =  ({
+                  bitrate: representation.bitrate,
+                  mimeType: mimeType ?? "",
+                  codecs: codec ??  "",
+                  width: representation.width ?? 0,
+                  height: representation.height ?? 0,
+                  index: {
+                    loadInitSegment: ({ resolve, reject }) => {
+                      db.get("segments", `init--${id}--${contentID}`)
+                        .then((segment?: ISegmentStored) => {
+                          if (segment === undefined) {
+                            return reject(
+                              new SegmentConstuctionError(`${contentID}:
+                                Impossible to retrieve INIT segment in IndexedDB for
+                                representation: ${id}, got: undefined`)
+                            );
+                          }
                           return resolve({
-                            data: new Uint8Array(0),
+                            data: segment.data,
                           });
-                        }
-                        return resolve({
-                          data: segment.data,
-                        });
-                      })
-                      .catch(reject);
+                        })
+                        .catch(reject);
+                    },
+                    loadSegment: (
+                      { time: reqSegmentTime },
+                      { resolve, reject }
+                    ) => {
+                      logger.debug("[downloader] try to get segments ", `${reqSegmentTime}--${id}--${contentID}`);
+
+                      db.get("segments", `${reqSegmentTime}--${id}--${contentID}`)
+                        .then((segment) => {
+                          if (segment === undefined) {
+                            throw Error("no segment found");
+                          }
+                          return resolve({
+                            data: segment.data,
+                          });
+                        })
+                        .catch(reject);
+                    },
+                    segments: representations[id],
                   },
-                  segments: representations[id],
-                },
-              })
+                });
+
+                // if offline content has DRM info
+                // add contentProtections info to localRepresentation
+                if (contentProtections?.keyIds !== undefined) {
+                  localRepresentation.contentProtections = {
+                    keyIds: contentProtections.keyIds
+                      .filter((keyId) => keyId.systemId !== undefined) as Exclude<typeof localRepresentation["contentProtections"], undefined>["keyIds"],
+                    initData:
+                      contentProtections.initData.reduce<IContentProtections["initData"]>(
+                        (acc, curr) => {
+                          acc[curr.type] = curr.values ;
+                          return acc;
+                        }, {}),
+                  };
+                }
+
+                return localRepresentation;
+              }
             ),
           })
         ),

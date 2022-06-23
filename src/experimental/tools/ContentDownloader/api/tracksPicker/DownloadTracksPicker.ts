@@ -28,28 +28,31 @@ import { ContentType, IContextManager } from "./types";
  * ContentManager that will decide which context adaptations/representations to use
  */
 class DownloadTracksPicker {
-
   static getHighestRepresentationIDByBitrate(
     representations: Representation[]
   ): string | null {
     if (representations.length === 0) {
       return null;
     }
-    const representation = representations.reduce<Representation>((acc, currRepre) => {
-      if (acc.bitrate < currRepre.bitrate) {
-        return currRepre;
-      }
-      return acc;
-    }, representations[0]);
+    const representation = representations.reduce<Representation>(
+      (acc, currRepre) => {
+        if (acc.bitrate < currRepre.bitrate) {
+          return currRepre;
+        }
+        return acc;
+      },
+      representations[0]
+    );
     return String(representation.id);
   }
 
   readonly manifest: Manifest;
-  readonly filters: IRepresentationFilters | undefined ;
+  readonly filters: IRepresentationFilters | undefined;
 
   constructor({ manifest, filters }: IContextManager) {
     this.manifest = manifest;
-    this.filters = filters === null || typeof filters !== "object" ? undefined : filters;
+    this.filters =
+      filters === null || typeof filters !== "object" ? undefined : filters;
   }
 
   getContextsForCurrentSession(): IGlobalContext {
@@ -76,59 +79,65 @@ class DownloadTracksPicker {
     );
   }
 
-  getContextsFormatted(
-    globalCtx: IGlobalContext
-  ): { video: IContext[]; audio: IContext[]; text: IContext[] } {
-    const video = globalCtx.video.reduce<IContext[]>(
-      (_, currVideo) => {
-        return currVideo.contexts.map(
-          (videoContext): IContext => ({
-            manifest: globalCtx.manifest,
-            period: currVideo.period,
-            ...videoContext,
-          })
-        );
-      },
-      []
-    );
-    const audio = globalCtx.audio.reduce<IContext[]>(
-      (_, currAudio) => {
-        return currAudio.contexts.map(
-          (audioContext): IContext => ({
-            manifest: globalCtx.manifest,
-            period: currAudio.period,
-            ...audioContext,
-          })
-        );
-      },
-      []
-    );
-    const text = globalCtx.text.reduce<IContext[]>(
-      (_, currText) => {
-        return currText.contexts.map(
-          (textContext): IContext => ({
-            manifest: globalCtx.manifest,
-            period: currText.period,
-            ...textContext,
-          })
-        );
-      },
-      []
-    );
+  getContextsFormatted(globalCtx: IGlobalContext): {
+    video: IContext[];
+    audio: IContext[];
+    text: IContext[];
+  } {
+    const video = globalCtx.video.reduce<IContext[]>((_, currVideo) => {
+      return currVideo.contexts.map(
+        (videoContext): IContext => ({
+          manifest: globalCtx.manifest,
+          period: currVideo.period,
+          ...videoContext,
+        })
+      );
+    }, []);
+    const audio = globalCtx.audio.reduce<IContext[]>((_, currAudio) => {
+      return currAudio.contexts.map(
+        (audioContext): IContext => ({
+          manifest: globalCtx.manifest,
+          period: currAudio.period,
+          ...audioContext,
+        })
+      );
+    }, []);
+    const text = globalCtx.text.reduce<IContext[]>((_, currText) => {
+      return currText.contexts.map(
+        (textContext): IContext => ({
+          manifest: globalCtx.manifest,
+          period: currText.period,
+          ...textContext,
+        })
+      );
+    }, []);
     return { video, audio, text };
   }
 
   private getRepresentationWithFilter(
     filterType: "video",
     representations: Representation[]
-  ) : string | undefined {
-    if (this.filters === undefined || typeof this.filters[filterType] !== "function") {
+  ): string | undefined {
+    if (
+      this.filters === undefined ||
+      typeof this.filters[filterType] !== "function"
+    ) {
       return undefined;
     }
     const representationFilterFn = this.filters[filterType];
-    return representationFilterFn(representations.map(
-      ({ width, height, id, bitrate }) => ({ width, height, id, bitrate })
-    ));
+    return representationFilterFn(
+      representations.map(({ width, height, id, bitrate }) => {
+        if (width === undefined || height === undefined) {
+          throw Error("width or height is zero");
+        }
+        return {
+          width ,
+          height ,
+          id,
+          bitrate,
+        };
+      })
+    );
   }
 
   private decideRepresentation(
@@ -156,7 +165,9 @@ class DownloadTracksPicker {
       //   return this.getHighestRepresentationIDByBitrate(representations);
       // }
       default:
-        return DownloadTracksPicker.getHighestRepresentationIDByBitrate(representations);
+        return DownloadTracksPicker.getHighestRepresentationIDByBitrate(
+          representations
+        );
     }
   }
 

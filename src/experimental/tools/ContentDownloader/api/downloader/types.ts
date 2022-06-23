@@ -17,7 +17,6 @@
 import { IDBPDatabase } from "idb";
 import { AsyncSubject } from "rxjs";
 
-import { TypedArray } from "../../../../../core/eme";
 import SegmentPipelineCreator from "../../../../../core/fetchers/segment/segment_fetcher_creator";
 import Manifest, {
   Adaptation,
@@ -25,8 +24,11 @@ import Manifest, {
   Period,
   Representation,
 } from "../../../../../manifest";
+import { IContentProtections } from "../../../../../parsers/manifest";
 import { ILocalIndexSegment } from "../../../../../parsers/manifest/local/types";
 import { ICallbacks, IProgressInformations } from "../../types";
+import { IOfflineDBSchema } from "../db/dbSetUp";
+import { ITypedArray } from "../drm/types";
 
 export type ContentBufferType = "video" | "audio" | "text";
 export type DownloadType = "start" | "resume";
@@ -62,14 +64,14 @@ export interface IContextRicher {
   adaptation: Adaptation;
   representation: Representation;
   id: string;
-  chunkData?: ISegmentData;
+  chunkData: ISegmentData;
 }
 
 export interface IAdaptationStored {
   type: ContentBufferType;
-  audioDescription?: boolean;
-  closedCaption?: boolean;
-  language?: string;
+  audioDescription: boolean;
+  closedCaption: boolean;
+  language: string;
   representations: Representation[];
 }
 
@@ -85,8 +87,8 @@ export interface IInitSegment {
   nextSegments: ISegment[];
   ctx: IContext;
   contentType: ContentBufferType;
-  segmentPipelineCreator: SegmentPipelineCreator<any>;
-  chunkData?: ISegmentData;
+  segmentPipelineCreator: SegmentPipelineCreator;
+  chunkData: ISegmentData;
 }
 
 export interface IInitGroupedSegments {
@@ -94,7 +96,7 @@ export interface IInitGroupedSegments {
   video: IContextRicher[];
   audio: IContextRicher[];
   text: IContextRicher[];
-  segmentPipelineCreator: SegmentPipelineCreator<any> | null;
+  segmentPipelineCreator: SegmentPipelineCreator | null;
   manifest: Manifest | null;
   type: DownloadType;
 }
@@ -102,12 +104,12 @@ export interface IInitGroupedSegments {
 export interface ISegmentStored {
   contentID: string;
   segmentKey: string;
-  data: TypedArray | ArrayBuffer;
+  data: ITypedArray | ArrayBuffer;
   size: number;
 }
 
 export interface IUtils extends ICallbacks {
-  db: IDBPDatabase;
+  db: IDBPDatabase<IOfflineDBSchema>;
   pause$: AsyncSubject<void>;
   contentID: string;
 }
@@ -123,7 +125,7 @@ export interface IManifestDBState {
 
 export interface ISegmentData {
   data: Uint8Array;
-  contentProtection?: Uint8Array;
+  contentProtections?: IContentProtections;
 }
 
 export interface ICustomSegment {
@@ -133,8 +135,8 @@ export interface ICustomSegment {
   contentType: ContentBufferType;
   representationID: string;
   isInitData: boolean;
-  nextSegments?: ISegment[];
-  progress?: IProgressInformations;
+  nextSegments?: ISegment[] | undefined;
+  progress?: IProgressInformations | undefined;
   type: DownloadType;
 }
 
@@ -142,14 +144,14 @@ export interface ISegmentPipelineContext {
   type: DownloadType;
   progress?: IProgressInformations;
   isInitData: boolean;
-  segmentPipelineCreator: SegmentPipelineCreator<any>;
+  segmentPipelineCreator: SegmentPipelineCreator;
   nextSegments?: ISegment[];
 }
 
 export interface IAbstractContextCreation {
   type: DownloadType;
   progress: IProgressInformations;
-  segmentPipelineCreator: SegmentPipelineCreator<any>;
+  segmentPipelineCreator: SegmentPipelineCreator;
   manifest: Manifest;
 }
 
@@ -157,5 +159,5 @@ export interface IUtilsOfflineLoader {
   contentID: string;
   duration: number;
   isFinished: boolean;
-  db: IDBPDatabase;
+  db: IDBPDatabase<IOfflineDBSchema>;
 }

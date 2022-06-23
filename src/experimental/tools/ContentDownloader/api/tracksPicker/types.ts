@@ -34,5 +34,5 @@ export interface IActivePauses {
 
 export interface IContextManager {
   manifest: Manifest;
-  filters?: IRepresentationFilters;
+  filters?: IRepresentationFilters | undefined;
 }

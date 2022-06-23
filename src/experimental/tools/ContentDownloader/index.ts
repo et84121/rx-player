@@ -15,15 +15,20 @@
  */
 
 import { IDBPDatabase } from "idb";
-import { AsyncSubject } from "rxjs";
+import { AsyncSubject, Subject } from "rxjs";
+import { IProtectionData } from "../../../core/decrypt";
+
 
 import {
   addFeatures,
-  IFeatureFunction,
 } from "../../../features";
-import PPromise from "../../../utils/promise";
+import { IFeatureFunction } from "../../../features/types";
+import logger from "../../../log";
+import { IKeySystemOption } from "../../../public_types";
+import { base64ToBytes } from "../../../utils/base64";
 
-import { setUpDb } from "./api/db/dbSetUp";
+
+import { IOfflineDBSchema, setUpDb } from "./api/db/dbSetUp";
 import DownloadManager from "./api/downloader/downloadManager";
 import {
   getBuilderFormattedForAdaptations,
@@ -31,7 +36,8 @@ import {
   getKeySystemsSessionsOffline,
   offlineManifestLoader,
 } from "./api/downloader/manifest";
-import { IContentProtection } from "./api/drm/types";
+import { RenewalLicense } from "./api/drm/renewLicense";
+// import { IContentProtection } from "./api/drm/types";
 import { IActiveDownload, IActivePauses } from "./api/tracksPicker/types";
 import {
   IAvailableContent,
@@ -44,9 +50,11 @@ import {
 import {
   assertResumeADownload,
   checkInitDownloaderOptions,
+  deserialize,
   isPersistentLicenseSupported,
   isValidContentID,
   SegmentConstuctionError,
+  serialize,
   ValidationArgsError,
 } from "./utils";
 
@@ -92,7 +100,7 @@ class ContentDownloader {
   }
 
   public readonly dbName: string;
-  private db: IDBPDatabase | null;
+  private db: IDBPDatabase<IOfflineDBSchema> | null;
   private activeDownloads: IActiveDownload;
   private activePauses: IActivePauses;
 
@@ -151,7 +159,8 @@ class ContentDownloader {
             if (manifest === null) {
               return;
             }
-            db.put("manifests", {
+
+            const payload = {
               url,
               contentID,
               transport,
@@ -159,15 +168,21 @@ class ContentDownloader {
               builder: { video, audio, text },
               progress,
               size,
-              duration: manifest.getMaximumPosition() - manifest.getMinimumPosition(),
+              duration:
+                manifest.getMaximumSafePosition() - manifest.getMinimumSafePosition(),
               metadata,
-            }).then(() => {
+            };
+
+            // 將 Uint8Array 轉成 base64 編碼
+            const serializePayload = serialize(payload);
+
+            db.put("manifests", { contentID, serializePayload }).then(() => {
               if (progress.percentage === 100) {
                 options.onFinished?.();
               }
             }).catch((err: Error) => {
               if (err instanceof Error) {
-               return options?.onError?.(err);
+                return options?.onError?.(err);
               }
             });
           },
@@ -191,7 +206,7 @@ class ContentDownloader {
    * @param {string} contentID
    * @returns {Promise.<void>}
    */
-  async resume(contentID: string, callbacks?: ICallbacks): Promise<void> {
+  async resume(contentID: string, callbacks: ICallbacks): Promise<void> {
     try {
       if (this.db === null) {
         throw new Error("You must run initialize() first!");
@@ -200,10 +215,23 @@ class ContentDownloader {
       if (contentID == null || contentID === "") {
         throw new Error("You must specify a valid contentID for resuming.");
       }
-      const storedManifest = await db.get(
+
+      const IdbManifests = (await db.get(
         "manifests",
         contentID
-      ) as IStoredManifest;
+      ));
+
+      const storedManifest : IStoredManifest | undefined =
+        IdbManifests ?
+          deserialize(IdbManifests.serializePayload) as IStoredManifest
+          : undefined ;
+
+      if (storedManifest === undefined || storedManifest.manifest === null) {
+        throw new SegmentConstuctionError(
+          `No Manifest found for current content ${contentID}`
+        );
+      }
+
       assertResumeADownload(storedManifest, this.activeDownloads);
       const pause$ = new AsyncSubject<void>();
       this.activePauses[contentID] = pause$;
@@ -219,8 +247,9 @@ class ContentDownloader {
             if (manifest === null) {
               return;
             }
-            const { metadata, transport, duration, url } = storedManifest;
-            db.put("manifests", {
+            const { metadata, transport,  url } = storedManifest;
+
+            const payload = {
               url,
               contentID,
               transport,
@@ -228,15 +257,22 @@ class ContentDownloader {
               builder: { video, audio, text },
               progress,
               size,
-              duration,
+              duration:
+                manifest.getMaximumSafePosition() - manifest.getMinimumSafePosition(),
               metadata,
+            };
+            const serializePayload = serialize(payload);
+
+            db.put("manifests", {
+              contentID,
+              serializePayload,
             }).then(() => {
               if (progress.percentage === 100) {
                 callbacks?.onFinished?.();
               }
             }).catch((err) => {
               if (err instanceof Error) {
-               return callbacks?.onError?.(err);
+                return callbacks?.onError?.(err);
               }
             });
           },
@@ -286,19 +322,23 @@ class ContentDownloader {
       }
 
       return resolve(this.db.getAll("manifests", undefined, limit)
+
+
+        .then((data) => data.map(d => deserialize(d.serializePayload) as IStoredManifest))
+
         .then((manifests: IStoredManifest[]) => {
           return manifests.map(
             ({ contentID, metadata, size, duration, progress, url, transport }) => ({
-          id: contentID,
-          metadata,
-          size,
-          duration,
-          progress: progress.percentage,
-          isFinished: progress.percentage === 100,
-          url,
-          transport,
+              id: contentID,
+              metadata,
+              size,
+              duration,
+              progress: progress.percentage,
+              isFinished: progress.percentage === 100,
+              url,
+              transport,
+            }));
         }));
-      }));
     });
   }
 
@@ -313,17 +353,19 @@ class ContentDownloader {
       throw new Error("You must run initialize() first!");
     }
     const db = this.db;
-    const [contentManifest, contentsProtection]: [
-      IStoredManifest?,
-      IContentProtection[]?,
-    ] = await PPromise.all([
+    const [IdbManifests, contentsProtection] = await Promise.all([
       db.get("manifests", contentID),
-      db
-      .transaction("contentsProtection", "readonly")
-      .objectStore("contentsProtection")
-      .index("contentID")
-      .getAll(IDBKeyRange.only(contentID)),
+      db.transaction("contentsProtection", "readonly")
+        .objectStore("contentsProtection")
+        .index("contentID")
+        .getAll(IDBKeyRange.only(contentID)),
     ]);
+
+    const contentManifest: IStoredManifest | undefined =
+      IdbManifests ?
+        deserialize(IdbManifests.serializePayload) as IStoredManifest
+        : undefined ;
+
     if (contentManifest === undefined || contentManifest.manifest === null) {
       throw new SegmentConstuctionError(
         `No Manifest found for current content ${contentID}`
@@ -334,6 +376,7 @@ class ContentDownloader {
       duration,
       manifest,
     } = contentManifest;
+
     const contentProtection = getKeySystemsSessionsOffline(contentsProtection);
 
     if (contentProtection === undefined) {
@@ -346,35 +389,43 @@ class ContentDownloader {
             { contentID, duration, isFinished: progress.percentage === 100, db }
           );
         },
-       };
-      }
+      };
+    }
     return {
       getManifest() {
-      return offlineManifestLoader(
-        manifest,
-        getBuilderFormattedForAdaptations(contentManifest),
-        getBuilderFormattedForSegments(contentManifest),
-        { contentID, duration, isFinished: progress.percentage === 100, db }
-      );
-    },
-    keySystems: [{
-      type: contentProtection.type,
-      persistentStateRequired: true,
-      persistentLicense: true,
-      licenseStorage: {
-        load() {
-          return contentProtection.sessionsIDS;
-        },
-        save() {
-          return;
-        },
+        return offlineManifestLoader(
+          manifest,
+          getBuilderFormattedForAdaptations(contentManifest),
+          getBuilderFormattedForSegments(contentManifest),
+          { contentID, duration, isFinished: progress.percentage === 100, db }
+        );
       },
-      getLicense() {
-        return null;
-      },
-    }],
-  };
-}
+      keySystems: [{
+        type: contentProtection.drmType,
+        persistentStateRequired: true,
+        persistentLicense: true,
+        licenseStorage: {
+          load() {
+            return contentProtection.storedContentsProtections;
+          },
+          save(persistentSessionInfos) {
+            logger.warn("[downloader] try to save ContentsProtections",
+                        persistentSessionInfos);
+            // 必需處理刪除無用 keysession
+            return;
+          },
+        },
+        getLicense(msg, type) {
+
+          logger.warn("[downloader] trying to get license", {
+            msg, type,
+          });
+
+          return null;
+        },
+      }],
+    };
+  }
 
   /**
    * Delete an entry partially or fully downloaded and stop the download
@@ -415,6 +466,65 @@ class ContentDownloader {
       cursorDRM = await cursorDRM.continue();
     }
     await db.delete("manifests", contentID);
+  }
+
+  /**
+   * delete old DRM license and store a new one
+   * @param contentID
+   * @param keySystemOptions
+   */
+  async renewalContentLicense(contentID: string, keySystemOptions: IKeySystemOption) {
+    if (this.db === null) {
+      throw new Error("You must run initialize() first!");
+    }
+    const db = this.db;
+    const [contentsProtections] = await Promise.all([
+      db.transaction("contentsProtection", "readonly")
+        .objectStore("contentsProtection")
+        .index("contentID")
+        .getAll(IDBKeyRange.only(contentID)),
+    ]);
+
+    const contentProtection$ = new Subject<IProtectionData>();
+
+    RenewalLicense(
+      keySystemOptions,
+      {
+        contentID,
+        contentProtection$,
+        db: this.db,
+      }
+    );
+
+
+    contentsProtections.forEach((val) => {
+      val.persistentSessionInfo.reduce<IProtectionData[]>((acc, curr) => {
+        switch (curr.version){
+          case 4:
+            acc.push(
+              {
+                type: curr.initDataType,
+                values: curr.values.map((psshVal) => {
+                  return {
+                    data: typeof psshVal.data === "string" ?
+                      base64ToBytes(psshVal.data) : psshVal.data.initData ,
+                    systemId: psshVal.systemId,
+                  };
+                }),
+                keyIds: curr.keyIds.map(
+                  id => typeof id === "string" ? base64ToBytes(id) : id.initData
+                ),
+              }
+            );
+
+            return acc;
+          default:
+            throw new Error("unsupported persistentSessionInfo version");
+        }
+      }, []).forEach((contentProtentData) => {
+        contentProtection$.next(contentProtentData);
+      });
+    });
   }
 }
 

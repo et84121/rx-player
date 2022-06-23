@@ -14,22 +14,25 @@
  * limitations under the License.
  */
 
-import { IKeySystemOption } from "../../../core/eme";
+import { JsonValue } from "type-fest";
+import { IKeySystemOption } from "../../../core/decrypt";
 import Manifest from "../../../manifest";
 import { ILocalManifest } from "../../../parsers/manifest/local";
 import { IContextRicher } from "./api/downloader/types";
 
-export interface IDownloadArguments extends Partial<ICallbacks> {
+type MetaData = JsonValue;
+
+export interface IDownloadArguments extends ICallbacks {
   url : string;
   transport : string;
   keySystems? : IKeySystemOption;
-  metadata? : any; // Should be a valid JSON Object
-  filters? : IRepresentationFilters;
+  metadata? : MetaData; // Should be a valid JSON Object
+  filters ?: IRepresentationFilters | undefined;
 }
 
 export interface ICallbacks {
   onProgress? : (evt: IProgressInfos) => void;
-  onError? : (evt: Error) => void;
+  onError : (evt: Error) => void;
   onFinished? : () => void;
 }
 
@@ -45,7 +48,7 @@ export interface IStorageInfo {
 
 export interface IAvailableContent {
   id : string;
-  metadata : any; // Should be a valid JSON Object
+  metadata : MetaData; // Should be a valid JSON Object
   size : number; // approximately the storage space taken by this content, in bytes
   duration : number; // Duration of the content (when played from start to end), in secs
   progress : number; // Percentage of progression (in terms of download) from 0 to 100
@@ -90,7 +93,7 @@ export interface IStoredManifest {
   };
   progress: IProgressInformations;
   size: number;
-  metadata?: any;
+  metadata: MetaData;
   duration: number;
 }
 

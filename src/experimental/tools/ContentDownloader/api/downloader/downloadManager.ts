@@ -20,6 +20,7 @@ import { filter, startWith, tap } from "rxjs/operators";
 
 import SegmentPipelineCreator from "../../../../../core/fetchers/segment/segment_fetcher_creator";
 import { ICallbacks, IInitSettings, IStoredManifest } from "../../types";
+import { IOfflineDBSchema } from "../db/dbSetUp";
 import { initDownloader$ } from "./initSegment";
 import { getTransportPipelineByTransport } from "./manifest";
 import { segmentPipelineDownloader$ } from "./segment";
@@ -29,9 +30,9 @@ import { segmentPipelineDownloader$ } from "./segment";
  * resuming or downloading from scratch.
  */
 class DownloadManager {
-  readonly db: IDBPDatabase;
+  readonly db: IDBPDatabase<IOfflineDBSchema>;
 
-  constructor(db: IDBPDatabase) {
+  constructor(db: IDBPDatabase<IOfflineDBSchema>) {
     this.db = db;
   }
 
@@ -48,7 +49,7 @@ class DownloadManager {
     const pipelineSegmentDownloader$ = segmentPipelineDownloader$(
       initDownloader$(initSettings, this.db),
       builderInit,
-      { contentID, onError, onProgress, db: this.db, pause$ }
+      { contentID, db: this.db, pause$, onError }
     );
     return combineLatest([
       pipelineSegmentDownloader$.pipe(
@@ -63,8 +64,11 @@ class DownloadManager {
     ]);
   }
 
-  resumeDownload(resumeSettings: IStoredManifest,
-                  pause$: AsyncSubject<void>, callbacks?: ICallbacks) {
+  resumeDownload(
+    resumeSettings: IStoredManifest,
+    pause$: AsyncSubject<void>,
+    callbacks: ICallbacks
+  ) {
     const {
       progress,
       manifest,
@@ -73,9 +77,9 @@ class DownloadManager {
       transport,
       size,
     } = resumeSettings;
-    const onError = callbacks?.onError;
+    const onError = callbacks.onError;
     const onProgress = callbacks?.onProgress;
-    const segmentPipelineCreator = new SegmentPipelineCreator<any>(
+    const segmentPipelineCreator = new SegmentPipelineCreator(
       getTransportPipelineByTransport(transport),
       {
         lowLatencyMode: false,

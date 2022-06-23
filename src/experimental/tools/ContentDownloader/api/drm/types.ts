@@ -17,7 +17,11 @@
 import { IDBPDatabase } from "idb";
 import { Subject } from "rxjs";
 
-import { IContentProtection as IContentProtectionPSSH, IPersistentSessionInfo } from "../../../../../core/eme";
+import {
+  IPersistentSessionInfo,
+  IProtectionData,
+} from "../../../../../core/decrypt";
+import { IOfflineDBSchema } from "../db/dbSetUp";
 import { ContentBufferType } from "../downloader/types";
 
 export type ITypedArray =
@@ -31,19 +35,23 @@ export type ITypedArray =
   | Float32Array
   | Float64Array;
 
-export interface IContentProtection {
+export interface IStoredContentProtection {
+  /**
+   * offline content id identifier
+   */
   contentID: string;
   drmKey: string;
-  keySystems: {
-    sessionsIDS: IPersistentSessionInfo[];
-    type: string;
-  };
+  drmType: string;
+  persistentSessionInfo: IPersistentSessionInfo[];
 }
 
 export interface IUtilsKeySystemsTransaction {
+  /**
+   * offline content id identifier
+   */
   contentID: string;
-  contentProtection$: Subject<IContentProtectionPSSH>;
-  db: IDBPDatabase;
+  contentProtection$: Subject<IProtectionData>;
+  db: IDBPDatabase<IOfflineDBSchema>;
 }
 
 export interface IEMEOptions {

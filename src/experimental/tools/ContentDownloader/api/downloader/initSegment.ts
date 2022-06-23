@@ -17,44 +17,45 @@
 import { IDBPDatabase } from "idb";
 import { EMPTY, from, merge, of, Subject, throwError } from "rxjs";
 import {
- bufferCount,
- catchError,
- distinctUntilKeyChanged,
- filter,
- map,
- mapTo,
- mergeMap,
- reduce,
- retry,
- timeout,
+  bufferCount,
+  catchError,
+  distinctUntilChanged,
+  filter,
+  map,
+  mapTo,
+  mergeMap,
+  reduce,
+  retry,
+  timeout,
 } from "rxjs/operators";
 
-import { IContentProtection } from "../../../../../core/eme";
+import { ContentDecryptorState, IProtectionData } from "../../../../../core/decrypt";
 import SegmentPipelineCreator from "../../../../../core/fetchers/segment/segment_fetcher_creator";
 import { IInitSettings } from "../../types";
-import EMETransaction from "../drm/keySystems";
+import { IOfflineDBSchema } from "../db/dbSetUp";
+import ContentDecryptorTransaction from "../drm/keySystems";
 import DownloadTracksPicker from "../tracksPicker/DownloadTracksPicker";
 import { ContentType } from "../tracksPicker/types";
 import { manifestLoader } from "./manifest";
 import { handleSegmentPipelineFromContexts } from "./segment";
-import { ICustomSegment, IInitGroupedSegments, IInitSegment } from "./types";
+import { IInitGroupedSegments, IInitSegment } from "./types";
 
 /**
  * This function take care of downloading the init segment for VIDEO/AUDIO/TEXT
  * buffer type.
  * Then, he also find out the nextSegments we have to download.
  *
- * @param {IInitSettings} object Arguments we need to start the download.
+ * @param {IInitSettings} initSettings Arguments we need to start the download.
  * @param {IDBPDatabase} db The current opened IndexedDB instance
  * @returns {Observable<IInitGroupedSegments>} An observable containing
  * Initialization segments downloaded and next segments to download
  *
  */
-export function initDownloader$(initSettings: IInitSettings, db: IDBPDatabase) {
+export function initDownloader$(initSettings: IInitSettings, db: IDBPDatabase<IOfflineDBSchema>) {
   const { contentID, url, transport, keySystems, filters } = initSettings;
   return manifestLoader(url, transport).pipe(
     mergeMap(({ manifest, transportPipelines }) => {
-      const segmentPipelineCreator = new SegmentPipelineCreator<any>(
+      const segmentPipelineCreator = new SegmentPipelineCreator(
         transportPipelines,
         {
           lowLatencyMode: false,
@@ -62,7 +63,7 @@ export function initDownloader$(initSettings: IInitSettings, db: IDBPDatabase) {
           maxRetryOffline: 5,
         }
       );
-      const contentProtection$ = new Subject<IContentProtection>();
+      const contentProtection$ = new Subject<IProtectionData>();
       const contentManager = new DownloadTracksPicker({
         manifest,
         filters,
@@ -74,9 +75,9 @@ export function initDownloader$(initSettings: IInitSettings, db: IDBPDatabase) {
           );
           return merge(
             keySystems !== undefined && Object.keys(keySystems).length > 0
-            ? EMETransaction(keySystems, { contentID, contentProtection$, db }).pipe(
-              filter(({ type }) => type === "session-message" || type === "session-updated"),
-              distinctUntilKeyChanged("type"),
+            ? ContentDecryptorTransaction(keySystems, { contentID, contentProtection$, db }).pipe(
+              filter((state) => state === ContentDecryptorState.ReadyForContent),
+              distinctUntilChanged(),
               bufferCount(2),
               timeout(2000),
               catchError((err) => {
@@ -85,7 +86,8 @@ export function initDownloader$(initSettings: IInitSettings, db: IDBPDatabase) {
                 }
                 return of("handShakesEMEDone");
               }),
-              mapTo({ type: "eme" }))
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+              mapTo({ type: "eme"  } as const))
             : EMPTY,
             handleSegmentPipelineFromContexts(video, ContentType.VIDEO, {
               segmentPipelineCreator,
@@ -114,12 +116,13 @@ export function initDownloader$(initSettings: IInitSettings, db: IDBPDatabase) {
           if (initSegment.type === "eme") {
             return EMPTY;
           }
-          const initSegmentCustomSegment = initSegment as ICustomSegment;
-          if (initSegmentCustomSegment.chunkData.contentProtection !== undefined) {
-            contentProtection$.next({
-              type: "cenc",
-              data: initSegmentCustomSegment.chunkData.contentProtection,
-            });
+          const initSegmentCustomSegment = initSegment;
+
+          const protectionData = initSegmentCustomSegment.chunkData.contentProtections;
+
+          if (protectionData !== undefined) {
+            protectionData.initData.forEach(d =>  contentProtection$.next(d));
+
           }
           const { ctx, chunkData } = initSegmentCustomSegment;
           const { id: representationID } = ctx.representation;
@@ -129,7 +132,6 @@ export function initDownloader$(initSettings: IInitSettings, db: IDBPDatabase) {
               segmentKey: `init--${representationID}--${contentID}`,
               data: chunkData.data,
               size: chunkData.data.byteLength,
-              contentProtection: chunkData.contentProtection,
             })
           ).pipe(
             retry(3),
@@ -171,7 +173,7 @@ export function initDownloader$(initSettings: IInitSettings, db: IDBPDatabase) {
           period,
           adaptation,
           representation,
-          id: representation.id as string,
+          id: representation.id ,
           chunkData,
         });
         return { ...acc, segmentPipelineCreator, manifest };
