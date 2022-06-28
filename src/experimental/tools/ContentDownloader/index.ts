@@ -409,15 +409,15 @@ class ContentDownloader {
             return contentProtection.storedContentsProtections;
           },
           save(persistentSessionInfos) {
-            logger.warn("[downloader] try to save ContentsProtections",
+            logger.warn("[Downloader] try to save ContentsProtections",
                         persistentSessionInfos);
             // 必需處理刪除無用 keysession
             return;
           },
         },
         getLicense(msg, type) {
-
-          logger.warn("[downloader] trying to get license", {
+          // There should not be any license requests for offline playback.
+          logger.warn("[Downloader] trying to get license", {
             msg, type,
           });
 
@@ -491,7 +491,7 @@ class ContentDownloader {
       keySystemOptions,
       {
         contentID,
-        contentProtection$,
+        contentProtection$ ,
         db: this.db,
       }
     );
@@ -519,7 +519,7 @@ class ContentDownloader {
 
             return acc;
           default:
-            throw new Error("unsupported persistentSessionInfo version");
+            throw new Error("[Downloader] unsupported persistentSessionInfo version");
         }
       }, []).forEach((contentProtentData) => {
         contentProtection$.next(contentProtentData);

@@ -308,6 +308,20 @@ export default class ContentDecryptor extends EventEmitter<IContentDecryptorEven
    * Once disposed, a `ContentDecryptor` cannot be used anymore.
    */
   public dispose() {
+
+    if (this._stateData.state === ContentDecryptorState.ReadyForContent) {
+      const  mediaKeysData = this._stateData.data?.mediaKeysData;
+
+      if (mediaKeysData !== undefined) {
+        mediaKeysData.stores.loadedSessionsStore.closeAllSessions().then(
+          () => log.info("close all session")
+        ).catch(err => {
+          throw err;
+        });
+      }
+    }
+
+
     this.removeEventListener();
     this._stateData = { state: ContentDecryptorState.Disposed,
                         isMediaKeysAttached: undefined,

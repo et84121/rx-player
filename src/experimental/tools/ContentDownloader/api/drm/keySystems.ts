@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+import { endWith } from "rxjs";
 import ContentDecryptor, {
   ContentDecryptorState,
   IKeySystemOption,
@@ -76,8 +77,13 @@ function ContentDecryptorTransaction(
   ];
   const ContentDecryptorInstance = new ContentDecryptor(video, keySystems);
 
-  contentProtection$.subscribe((data) => {
-    ContentDecryptorInstance.onInitializationData(data);
+  contentProtection$.pipe(endWith("dispose" as const)).subscribe((data) => {
+    if (data === "dispose") {
+      ContentDecryptorInstance.dispose();
+    }
+    else {
+      ContentDecryptorInstance.onInitializationData(data);
+    }
   });
 
   ContentDecryptorInstance.addEventListener("stateChange", (payload) => {

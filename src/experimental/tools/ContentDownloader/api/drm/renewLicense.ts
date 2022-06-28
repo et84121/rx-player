@@ -1,3 +1,4 @@
+import { endWith } from "rxjs";
 import ContentDecryptor, {
   ContentDecryptorState,
   IKeySystemOption,
@@ -49,8 +50,13 @@ function RenewalLicense (
   ];
   const ContentDecryptorInstance = new ContentDecryptor(video, keySystems);
 
-  contentProtection$.subscribe((data) => {
-    ContentDecryptorInstance.onInitializationData(data);
+  contentProtection$.pipe(endWith("dispose" as const)).subscribe((data) => {
+    if (data === "dispose") {
+      ContentDecryptorInstance.dispose();
+    }
+    else {
+      ContentDecryptorInstance.onInitializationData(data);
+    }
   });
 
   ContentDecryptorInstance.addEventListener("stateChange", (payload) => {

@@ -202,9 +202,10 @@ export function getKeySystemsSessionsOffline(
   if (storedContentsProtections === undefined || storedContentsProtections.length === 0) {
     return undefined;
   }
-  const flattenedStoredContentsProtections = storedContentsProtections.reduce<IPersistentSessionInfo[]>((acc, curr) => {
-    return acc.concat(curr.persistentSessionInfo);
-  }, []);
+  const flattenedStoredContentsProtections = storedContentsProtections.
+    reduce<IPersistentSessionInfo[]>((acc, curr) => {
+      return acc.concat(curr.persistentSessionInfo);
+    }, []);
 
   return {
     drmType: storedContentsProtections[0].drmType,
@@ -241,10 +242,13 @@ export function offlineManifestLoader(
     minimumPosition: 0,
     maximumPosition: duration,
     periods: manifest.periods.map<ILocalPeriod>((period): ILocalPeriod => {
+
+      console.log({ manifest });
+
       return {
         start: period.start,
         end:
-          period.duration !== undefined ? period.duration : Number.MAX_VALUE,
+          period.end !== undefined ? period.end : Number.MAX_VALUE,
         adaptations: adaptations[period.id].map(
           (adaptation): ILocalAdaptation => ({
             type: adaptation.type,
@@ -287,7 +291,10 @@ export function offlineManifestLoader(
                       { time: reqSegmentTime },
                       { resolve, reject }
                     ) => {
-                      logger.debug("[downloader] try to get segments ", `${reqSegmentTime}--${id}--${contentID}`);
+                      logger.debug(
+                        "[downloader] try to get segments ",
+                        `${reqSegmentTime}--${id}--${contentID}`
+                      );
 
                       db.get("segments", `${reqSegmentTime}--${id}--${contentID}`)
                         .then((segment) => {

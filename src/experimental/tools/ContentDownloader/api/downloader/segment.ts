@@ -132,7 +132,7 @@ export function handleSegmentPipelineFromContexts<
                 // give contentProtections default value
                 if (
                   acc.contentProtections === undefined &&
-                  segmentProtections !== null
+                  segmentProtections !== undefined
                 ) {
                   acc.contentProtections = {
                     keyIds: undefined,
