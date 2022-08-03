@@ -15,9 +15,9 @@
  */
 
 import { JsonValue } from "type-fest";
-import { IKeySystemOption } from "../../../core/decrypt";
 import Manifest from "../../../manifest";
 import { ILocalManifest } from "../../../parsers/manifest/local";
+import { IKeySystemOption } from "../../../public_types";
 import { IContextRicher } from "./api/downloader/types";
 
 type MetaData = JsonValue;

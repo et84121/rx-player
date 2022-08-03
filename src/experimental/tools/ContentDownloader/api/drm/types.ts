@@ -16,11 +16,10 @@
 
 import { IDBPDatabase } from "idb";
 import { Subject } from "rxjs";
-
 import {
-  IPersistentSessionInfo,
   IProtectionData,
 } from "../../../../../core/decrypt";
+import { IPersistentSessionInfo } from "../../../../../public_types";
 import { IOfflineDBSchema } from "../db/dbSetUp";
 import { ContentBufferType } from "../downloader/types";
 

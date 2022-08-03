@@ -409,8 +409,10 @@ class ContentDownloader {
             return contentProtection.storedContentsProtections;
           },
           save(persistentSessionInfos) {
-            logger.warn("[Downloader] try to save ContentsProtections",
-                        persistentSessionInfos);
+
+            logger.warn(
+              // @ts-ignore
+              "[Downloader] try to save ContentsProtections", persistentSessionInfos);
             // 必需處理刪除無用 keysession
             return;
           },
@@ -418,7 +420,9 @@ class ContentDownloader {
         getLicense(msg, type) {
           // There should not be any license requests for offline playback.
           logger.warn("[Downloader] trying to get license", {
-            msg, type,
+            // @ts-ignore
+            msg,
+            type,
           });
 
           return null;

@@ -16,9 +16,9 @@
 import { endWith } from "rxjs";
 import ContentDecryptor, {
   ContentDecryptorState,
-  IKeySystemOption,
-  IPersistentSessionInfo,
 } from "../../../../../core/decrypt";
+
+import { IKeySystemOption, IPersistentSessionInfo } from "../../../../../public_types";
 import { fromEvent } from "../../../../../utils/event_emitter";
 
 import { IndexedDBError } from "../../utils";

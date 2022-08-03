@@ -33,6 +33,8 @@ import $handleCatchUpMode from "./catchUp";
 import VideoThumbnailLoader, {
   DASH_LOADER
 } from "../../../../../src/experimental/tools/VideoThumbnailLoader";
+import ContentDownloader from "../../../../../src/experimental/tools/ContentDownloader";
+
 
 RxPlayer.addFeatures([
   BIF_PARSER,

@@ -17,7 +17,6 @@
 import { Observable } from "rxjs";
 import { filter, map, mergeMap } from "rxjs/operators";
 
-import { IPersistentSessionInfo } from "../../../../../core/decrypt";
 import createManifestFetcher, {
   IManifestFetcherParsedResult,
   IManifestFetcherResponse,
@@ -34,6 +33,7 @@ import {
   ILocalPeriod,
   ILocalRepresentation,
 } from "../../../../../parsers/manifest/local/types";
+import {  IPersistentSessionInfo } from "../../../../../public_types";
 import { ITransportPipelines } from "../../../../../transports";
 import { IStoredManifest } from "../../types";
 import { SegmentConstuctionError } from "../../utils";
@@ -242,9 +242,6 @@ export function offlineManifestLoader(
     minimumPosition: 0,
     maximumPosition: duration,
     periods: manifest.periods.map<ILocalPeriod>((period): ILocalPeriod => {
-
-      console.log({ manifest });
-
       return {
         start: period.start,
         end:
