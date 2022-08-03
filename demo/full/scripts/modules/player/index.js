@@ -25,9 +25,10 @@ import {
 } from "../../../../../src/features/list";
 import {
   DASH_WASM,
+  LOCAL_MANIFEST,
   METAPLAYLIST,
 } from "../../../../../src/experimental/features";
-import RxPlayer from "../../../../../src/minimal.ts";
+import RxPlayer from "../../../../../src/minimal";
 import { linkPlayerEventsToState } from "./events.js";
 import $handleCatchUpMode from "./catchUp";
 import VideoThumbnailLoader, {
@@ -49,6 +50,7 @@ RxPlayer.addFeatures([
   IMAGE_BUFFER,
   SMOOTH,
   METAPLAYLIST,
+  LOCAL_MANIFEST
 ]);
 
 /* eslint-disable no-undef */
