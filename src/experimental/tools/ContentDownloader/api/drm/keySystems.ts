@@ -50,7 +50,7 @@ function ContentDecryptorTransaction(
       ...keySystemsOption,
       licenseStorage: {
         save(persistentSessionInfo: IPersistentSessionInfo[]) {
-          db.add("contentsProtection", {
+          db.put("contentsProtection", {
             contentID,
             drmKey: `${contentID}--${id}`,
             drmType: keySystemsOption.type,

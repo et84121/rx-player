@@ -36,8 +36,7 @@ import {
   getKeySystemsSessionsOffline,
   offlineManifestLoader,
 } from "./api/downloader/manifest";
-import { RenewalLicense } from "./api/drm/renewLicense";
-// import { IContentProtection } from "./api/drm/types";
+import keySystem from "./api/drm/keySystems";
 import { IActiveDownload, IActivePauses } from "./api/tracksPicker/types";
 import {
   IAvailableContent,
@@ -413,7 +412,6 @@ class ContentDownloader {
             logger.warn(
               // @ts-ignore
               "[Downloader] try to save ContentsProtections", persistentSessionInfos);
-            // 必需處理刪除無用 keysession
             return;
           },
         },
@@ -491,7 +489,7 @@ class ContentDownloader {
 
     const contentProtection$ = new Subject<IProtectionData>();
 
-    RenewalLicense(
+    keySystem(
       keySystemOptions,
       {
         contentID,
@@ -503,28 +501,27 @@ class ContentDownloader {
 
     contentsProtections.forEach((val) => {
       val.persistentSessionInfo.reduce<IProtectionData[]>((acc, curr) => {
-        switch (curr.version){
-          case 4:
-            acc.push(
-              {
-                type: curr.initDataType,
-                values: curr.values.map((psshVal) => {
-                  return {
-                    data: typeof psshVal.data === "string" ?
-                      base64ToBytes(psshVal.data) : psshVal.data.initData ,
-                    systemId: psshVal.systemId,
-                  };
-                }),
-                keyIds: curr.keyIds.map(
-                  id => typeof id === "string" ? base64ToBytes(id) : id.initData
-                ),
-              }
-            );
-
-            return acc;
-          default:
-            throw new Error("[Downloader] unsupported persistentSessionInfo version");
+        if (curr.version !== 4) {
+          throw new Error("[Downloader] unsupported persistentSessionInfo version");
         }
+
+        acc.push(
+          {
+            type: curr.initDataType,
+            values: curr.values.map((psshVal) => {
+              return {
+                data: typeof psshVal.data === "string" ?
+                      base64ToBytes(psshVal.data) : psshVal.data.initData ,
+                systemId: psshVal.systemId,
+              };
+            }),
+            keyIds: curr.keyIds.map(
+              id => typeof id === "string" ? base64ToBytes(id) : id.initData
+            ),
+          }
+        );
+
+        return acc;
       }, []).forEach((contentProtentData) => {
         contentProtection$.next(contentProtentData);
       });
