@@ -89,9 +89,15 @@ export async function checkInitDownloaderOptions(
       "You must specify a transport protocol, values possible: smooth, dash"
     );
   }
+  const uuid = generateUUID();
+  const content = await db.get("manifests", uuid);
+  if (content !== undefined) {
+    throw new RxPlayerError(
+      "contentID collision, you should retry download again"
+    );
+  }
 
-  const nbDownload = await db.count("manifests");
-  return String(nbDownload + 1);
+  return uuid;
 }
 
 /**
@@ -196,8 +202,7 @@ export function getKeySystemConfigurations(
     });
   }
   else {
-    // TODO: maybe this should be remover
-    throw Error("unsupport DRM system");
+    throw new RxPlayerError("unsupport DRM system");
   }
 
 
@@ -277,5 +282,22 @@ export function deserialize(value: string) {
 
     // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return v;
+  });
+}
+
+/**
+ *
+ * @see https://gist.github.com/MarvinJWendt/72b02fd42232f03a5d02e7ae6ff318e9
+ * @returns UUID
+ */
+export function generateUUID() {
+  let d = Date.now();
+  if (typeof performance !== "undefined" && typeof performance.now === "function") {
+    d += performance.now(); // use high-precision timer if available
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+    const r = (d + Math.random() * 16) % 16 | 0;
+    d = Math.floor(d / 16);
+    return (c === "x" ? r : (r & 0x3 | 0x8)).toString(16);
   });
 }

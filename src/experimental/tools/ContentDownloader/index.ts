@@ -25,7 +25,7 @@ import {
 import { IFeatureFunction } from "../../../features/types";
 import logger from "../../../log";
 import { IKeySystemOption } from "../../../public_types";
-import { base64ToBytes } from "../../../utils/base64";
+import { base64ToBytes, bytesToBase64 } from "../../../utils/base64";
 
 
 import { IOfflineDBSchema, setUpDb } from "./api/db/dbSetUp";
@@ -408,21 +408,19 @@ class ContentDownloader {
             return contentProtection.storedContentsProtections;
           },
           save(persistentSessionInfos) {
-
             logger.warn(
-              // @ts-ignore
-              "[Downloader] try to save ContentsProtections", persistentSessionInfos);
+              "[Downloader] try to save ContentsProtections",
+              JSON.stringify(persistentSessionInfos)
+            );
             return;
           },
         },
         getLicense(msg, type) {
           // There should not be any license requests for offline playback.
-          logger.warn("[Downloader] trying to get license", {
-            // @ts-ignore
-            msg,
+          logger.warn("[Downloader] trying to get license", JSON.stringify({
+            msg:  bytesToBase64(msg) ,
             type,
-          });
-
+          }));
           return null;
         },
       }],
