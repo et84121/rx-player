@@ -18,6 +18,8 @@ import LogDisplayer from "./LogDisplayer.jsx";
 import ChartsManager from "./charts/index.jsx";
 import PlayerKnobsSettings from "./PlayerKnobsSettings.jsx";
 import isEqual from "../lib/isEqual"
+import Button from "../components/Button.jsx";
+import { reproduceError } from "../modules/player/contentDownload.js";
 
 // time in ms while seeking/loading/buffering after which the spinner is shown
 const SPINNER_TIMEOUT = 300;
@@ -182,6 +184,7 @@ function Player() {
           onOptionToggle={onOptionToggle}
         />
         <Settings showOptions={showOptions} ref={optionsComp} />
+        <Button value='Reproduce Widevine Error' className="choice-input-button" onClick={reproduceError}></Button>
         <div
           className="video-player-wrapper"
           ref={playerWrapperElement}
