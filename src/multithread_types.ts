@@ -30,7 +30,7 @@ import type {
 } from "./mse";
 import type { IFreezingStatus, IRebufferingStatus } from "./playback_observer";
 import type { ICmcdOptions, ITrackType } from "./public_types";
-import type { ITransportOptions } from "./transports";
+import type { IThumbnailResponse, ITransportOptions } from "./transports";
 import type { ILogFormat, ILoggerLevel } from "./utils/logger";
 import type { IRange } from "./utils/ranges";
 
@@ -533,6 +533,18 @@ export interface IRemoveTextDataErrorMessage {
   };
 }
 
+/** Message sent from main thread when it wants to fetch thumbnail data. */
+export interface IThumbnailDataRequestMainMessage {
+  type: MainThreadMessageType.ThumbnailDataRequest;
+  contentId: string;
+  value: {
+    requestId: number;
+    periodId: string;
+    thumbnailTrackId: string;
+    time: number;
+  };
+}
+
 /**
  * Template for a message originating from main thread to update
  * `SharedReference` objects (a common abstraction of the RxPlayer allowing for
@@ -556,7 +568,7 @@ export type IReferenceUpdateMessage =
 
 export interface IPullSegmentSinkStoreInfos {
   type: MainThreadMessageType.PullSegmentSinkStoreInfos;
-  value: { messageId: number };
+  value: { requestId: number };
 }
 
 export const enum MainThreadMessageType {
@@ -581,6 +593,7 @@ export const enum MainThreadMessageType {
   StopContent = "stop",
   TrackUpdate = "track-update",
   PullSegmentSinkStoreInfos = "pull-segment-sink-store-infos",
+  ThumbnailDataRequest = "thumbnail-request",
 }
 
 export type IMainThreadMessage =
@@ -604,7 +617,8 @@ export type IMainThreadMessage =
   | IPushTextDataErrorMessage
   | IRemoveTextDataErrorMessage
   | IMediaSourceReadyStateChangeMainMessage
-  | IPullSegmentSinkStoreInfos;
+  | IPullSegmentSinkStoreInfos
+  | IThumbnailDataRequestMainMessage;
 
 export type ISentError =
   | ISerializedNetworkError
@@ -955,8 +969,24 @@ export interface ISegmentSinkStoreUpdateMessage {
   contentId: string;
   value: {
     segmentSinkMetrics: ISegmentSinkMetrics;
-    messageId: number;
+    requestId: number;
   };
+}
+
+export interface IThumbnailDataResponseWorkerMessage {
+  type: WorkerMessageType.ThumbnailDataResponse;
+  contentId: string;
+  value:
+    | {
+        status: "error";
+        requestId: number;
+        error: ISentError;
+      }
+    | {
+        status: "success";
+        requestId: number;
+        data: IThumbnailResponse;
+      };
 }
 
 export const enum WorkerMessageType {
@@ -997,6 +1027,7 @@ export const enum WorkerMessageType {
   UpdatePlaybackRate = "update-playback-rate",
   Warning = "warning",
   SegmentSinkStoreUpdate = "segment-sink-store-update",
+  ThumbnailDataResponse = "thumbnail-response",
 }
 
 export type IWorkerMessage =
@@ -1036,4 +1067,5 @@ export type IWorkerMessage =
   | IUpdateMediaSourceDurationWorkerMessage
   | IUpdatePlaybackRateWorkerMessage
   | IWarningWorkerMessage
-  | ISegmentSinkStoreUpdateMessage;
+  | ISegmentSinkStoreUpdateMessage
+  | IThumbnailDataResponseWorkerMessage;
