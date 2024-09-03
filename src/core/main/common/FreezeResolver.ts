@@ -237,7 +237,14 @@ export default class FreezeResolver {
         return { type: "reload", value: null };
       }
     }
-    if (freezing !== null && now - freezing.timestamp > UNFREEZING_SEEK_DELAY) {
+
+    let freezingTs = null;
+    if (freezing !== null) {
+      freezingTs = freezing.timestamp;
+    } else if (rebuffering !== null) {
+      freezingTs = rebuffering.timestamp;
+    }
+    if (freezingTs !== null && now - freezingTs > UNFREEZING_SEEK_DELAY) {
       this._lastFlushAttempt = {
         timestamp: now,
         position: polledPosition + UNFREEZING_DELTA_POSITION,
