@@ -402,13 +402,10 @@ export function toTaggedTrack(adaptation: IAdaptation): ITaggedTrack {
 export function isRepresentationPlayable(
   representation: IRepresentationMetadata,
 ): boolean | undefined {
-  if (representation.isSupported === undefined) {
-    if (representation.decipherable === false) {
-      return false;
-    }
-    return undefined;
+  if (representation.decipherable === false) {
+    return false;
   }
-  return representation.isSupported && representation.decipherable !== false;
+  return representation.isSupported;
 }
 
 /**
