@@ -14,7 +14,10 @@
  * limitations under the License.
  */
 
-import type { IMediaElement } from "../../../compat/browser_compatibility_types";
+import {
+  isManagedMediaSource,
+  type IMediaElement,
+} from "../../../compat/browser_compatibility_types";
 import clearElementSrc from "../../../compat/clear_element_src";
 import log from "../../../log";
 import MainMediaSourceInterface from "../../../mse/main_media_source_interface";
@@ -76,6 +79,26 @@ function createMediaSource(
   const oldSrc = isNonEmptyString(mediaElement.src) ? mediaElement.src : null;
   resetMediaElement(mediaElement, oldSrc);
   const mediaSource = new MainMediaSourceInterface(generateMediaSourceId());
+
+  if (isManagedMediaSource && "disableRemotePlayback" in mediaElement) {
+    const disableRemotePlaybackPreviousValue = mediaElement.disableRemotePlayback;
+    unlinkSignal.register(() => {
+      /**
+       * Restore the disableRemotePlayback attribute to the previous value
+       * in order to leave the <video> element in the same state has it was set
+       * by the application before calling the RxPlayer.
+       */
+      if (disableRemotePlaybackPreviousValue !== undefined) {
+        mediaElement.disableRemotePlayback = disableRemotePlaybackPreviousValue;
+      }
+    });
+    /**
+     * Using ManagedMediaSource needs to disableRemotePlayback or to provide
+     * an Airplay source alternative, such as HLS.
+     * https://github.com/w3c/media-source/issues/320
+     */
+    mediaElement.disableRemotePlayback = true;
+  }
   unlinkSignal.register(() => {
     mediaSource.dispose();
   });
@@ -106,7 +129,6 @@ export default function openMediaSource(
       },
       unlinkSignal,
     );
-
     log.info("MTCI: Attaching MediaSource URL to the media element");
     if (mediaSource.handle.type === "handle") {
       mediaElement.srcObject = mediaSource.handle.value;

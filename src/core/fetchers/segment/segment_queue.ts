@@ -99,6 +99,8 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
    * load segments for.
    * @param {boolean} hasInitSegment - Declare that an initialization segment
    * will need to be downloaded.
+   * @param {Object} canLoad - Indicates if the loading of new segment is authorized,
+   * it can be temporarily forbiddden if there is enough buffered data.
    *
    * A `SegmentQueue` ALWAYS wait for the initialization segment to be
    * loaded and parsed before parsing a media segment.
@@ -116,6 +118,7 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
   public resetForContent(
     content: ISegmentQueueContext,
     hasInitSegment: boolean,
+    canLoad: SharedReference<boolean>,
   ): SharedReference<ISegmentQueueItem> {
     this._currentContentInfo?.currentCanceller.cancel();
     const downloadQueue = new SharedReference<ISegmentQueueItem>({
@@ -136,8 +139,22 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
       initSegmentRequest: null,
       mediaSegmentRequest: null,
       mediaSegmentAwaitingInitMetadata: null,
+      canLoad,
     };
     this._currentContentInfo = currentContentInfo;
+
+    this._currentContentInfo.canLoad.onUpdate(
+      (val) => {
+        if (val) {
+          log.debug(
+            "SQ: Media segment can be loaded again, restarting queue.",
+            content.adaptation.type,
+          );
+          this._restartMediaSegmentDownloadingQueue(currentContentInfo);
+        }
+      },
+      { clearSignal: currentCanceller.signal },
+    );
 
     // Listen for asked media segments
     downloadQueue.onUpdate(
@@ -257,6 +274,10 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
     const { downloadQueue, content, initSegmentInfoRef, currentCanceller } = contentInfo;
 
     const recursivelyRequestSegments = (): void => {
+      if (!contentInfo.canLoad.getValue()) {
+        log.debug("SQ: Segment fetching postponed because it cannot stream now.");
+        return;
+      }
       const { segmentQueue } = downloadQueue.getValue();
       const startingSegment = segmentQueue[0];
       if (currentCanceller !== null && currentCanceller.isUsed()) {
@@ -681,4 +702,15 @@ interface ISegmentQueueContentInfo {
    * `null` if no segment is awaiting an init segment.
    */
   mediaSegmentAwaitingInitMetadata: string | null;
+  /**
+   * Indicates whether the user agent believes it has enough buffered data to ensure
+   * uninterrupted playback for a meaningful period or needs more data.
+   * It also reflects whether the user agent can retrieve and buffer data in an
+   * energy-efficient manner while maintaining the desired memory usage.
+   * The value can be `undefined` if the user agent does not provide this indicator.
+   * `true` indicates that the buffer is low, and more data should be buffered.
+   * `false` indicates that there is enough buffered data, and no additional data needs
+   *  to be buffered at this time.
+   */
+  canLoad: SharedReference<boolean>;
 }
