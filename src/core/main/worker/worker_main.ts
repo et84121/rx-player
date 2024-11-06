@@ -518,7 +518,7 @@ function loadOrReloadPreparedContent(
   const {
     contentId,
     cmcdDataBuilder,
-    enableRepresentationDeprecation,
+    enableRepresentationAvoidance,
     manifest,
     mediaSource,
     representationEstimator,
@@ -561,11 +561,11 @@ function loadOrReloadPreparedContent(
             });
             break;
           }
-          case "deprecate-representations": {
-            log.info("WP: Planning Representation deprecation due to freeze");
+          case "avoid-representations": {
+            log.info("WP: Planning Representation avoidance due to freeze");
             const content = freezeResolution.value;
-            if (enableRepresentationDeprecation) {
-              manifest.deprecateRepresentations(content);
+            if (enableRepresentationAvoidance) {
+              manifest.addRepresentationsToAvoid(content);
             }
             handleMediaSourceReload({
               timeOffset: 0,

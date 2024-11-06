@@ -112,7 +112,7 @@ interface IParsedLoadVideoOptionsBase {
   cmcd: ICmcdOptions | undefined;
   /** @see ILoadVideoOptions.experimentalOptions */
   experimentalOptions: {
-    enableRepresentationDeprecation: boolean;
+    enableRepresentationAvoidance: boolean;
   };
   __priv_manifestUpdateUrl?: string | undefined;
   __priv_patchLastSegmentInSidx?: boolean | undefined;
@@ -488,8 +488,8 @@ function parseLoadVideoOptions(options: ILoadVideoOptions): IParsedLoadVideoOpti
     url,
     cmcd: options.cmcd,
     experimentalOptions: {
-      enableRepresentationDeprecation:
-        options.experimentalOptions?.enableRepresentationDeprecation === true,
+      enableRepresentationAvoidance:
+        options.experimentalOptions?.enableRepresentationAvoidance === true,
     },
   };
 }

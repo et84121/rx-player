@@ -192,11 +192,11 @@ export interface ILoadVideoOptions {
   experimentalOptions?:
     | {
         /**
-         * If `true`, the RxPlayer can enable its "Representation deprecation"
+         * If `true`, the RxPlayer can enable its "Representation avoidance"
          * mechanism, where it avoid loading Representation that it suspect
          * have issues being decoded on the current device.
          */
-        enableRepresentationDeprecation: boolean | undefined;
+        enableRepresentationAvoidance: boolean | undefined;
       }
     | undefined;
 }

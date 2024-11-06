@@ -302,7 +302,7 @@ describe("API - parseLoadVideoOptions", () => {
     textTrackMode: "native",
     url: undefined,
     experimentalOptions: {
-      enableRepresentationDeprecation: false,
+      enableRepresentationAvoidance: false,
     },
   };
 

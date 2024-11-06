@@ -130,13 +130,8 @@ export default class ContentPreparer {
 
       currentMediaSourceCanceller.linkToSignal(contentCanceller.signal);
 
-      const {
-        contentId,
-        url,
-        hasText,
-        transportOptions,
-        enableRepresentationDeprecation,
-      } = context;
+      const { contentId, url, hasText, transportOptions, enableRepresentationAvoidance } =
+        context;
       let manifest: IManifest | null = null;
 
       // TODO better way
@@ -204,7 +199,7 @@ export default class ContentPreparer {
       this._currentContent = {
         cmcdDataBuilder,
         contentId,
-        enableRepresentationDeprecation,
+        enableRepresentationAvoidance,
         freezeResolver,
         mediaSource,
         manifest: null,
@@ -407,11 +402,11 @@ export interface IPreparedContentData {
    */
   cmcdDataBuilder: CmcdDataBuilder | null;
   /**
-   * If `true`, the RxPlayer can enable its "Representation deprecation"
+   * If `true`, the RxPlayer can enable its "Representation avoidance"
    * mechanism, where it avoid loading Representation that it suspect
    * have issues being decoded on the current device.
    */
-  enableRepresentationDeprecation: boolean;
+  enableRepresentationAvoidance: boolean;
   /**
    * Interface to the MediaSource implementation, allowing to buffer audio
    * and video media segments.

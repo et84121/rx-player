@@ -109,11 +109,11 @@ export interface IContentInitializationData {
    */
   cmcd?: ICmcdOptions | undefined;
   /**
-   * If `true`, the RxPlayer can enable its "Representation deprecation"
+   * If `true`, the RxPlayer can enable its "Representation avoidance"
    * mechanism, where it avoid loading Representation that it suspect
    * have issues being decoded on the current device.
    */
-  enableRepresentationDeprecation: boolean;
+  enableRepresentationAvoidance: boolean;
   /**
    * URL at which the content's Manifest is accessible.
    * `undefined` if unknown.

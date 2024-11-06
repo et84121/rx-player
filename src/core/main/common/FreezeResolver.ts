@@ -17,8 +17,8 @@ import type { IBufferedChunk } from "../../segment_sinks";
  * In that case, the recommendation is to avoid playing those
  * `Representation` at all.
  */
-export interface IRepresentationDeprecationFreezeResolution {
-  type: "deprecate-representations";
+export interface IRepresentationAvoidanceFreezeResolution {
+  type: "avoid-representations";
   /** The `Representation` to avoid. */
   value: Array<{
     adaptation: IAdaptation;
@@ -59,7 +59,7 @@ export interface IReloadFreezeResolution {
 
 /** Describe a strategy that can be taken to un-freeze playback. */
 export type IFreezeResolution =
-  | IRepresentationDeprecationFreezeResolution
+  | IRepresentationAvoidanceFreezeResolution
   | IFlushFreezeResolution
   | IReloadFreezeResolution;
 
@@ -319,8 +319,8 @@ export default class FreezeResolver {
       "FR: A recent flush seemed to have no effect on freeze, checking for transitions",
     );
 
-    /** Contains Representation we might want to deprecate after the following algorithm */
-    const toDeprecate = [];
+    /** Contains Representation we might want to avoid after the following algorithm */
+    const toAvoid = [];
 
     for (const ttype of ["audio", "video"] as const) {
       const segmentList = this._lastSegmentInfo[ttype];
@@ -383,9 +383,9 @@ export default class FreezeResolver {
         previousRepresentationEntry.segment === null
       ) {
         log.debug(
-          "FR: Freeze when beginning to play a content, try deprecating this quality",
+          "FR: Freeze when beginning to play a content, try avoiding this quality",
         );
-        toDeprecate.push({
+        toAvoid.push({
           adaptation: currentSegment.infos.adaptation,
           period: currentSegment.infos.period,
           representation: currentSegment.infos.representation,
@@ -401,10 +401,10 @@ export default class FreezeResolver {
         previousRepresentationEntry.segment.infos.representation.uniqueId
       ) {
         log.warn(
-          "FR: Freeze when switching Representation, deprecating",
+          "FR: Freeze when switching Representation, avoiding",
           currentSegment.infos.representation.bitrate,
         );
-        toDeprecate.push({
+        toAvoid.push({
           adaptation: currentSegment.infos.adaptation,
           period: currentSegment.infos.period,
           representation: currentSegment.infos.representation,
@@ -412,8 +412,8 @@ export default class FreezeResolver {
       }
     }
 
-    if (toDeprecate.length > 0) {
-      return { type: "deprecate-representations", value: toDeprecate };
+    if (toAvoid.length > 0) {
+      return { type: "avoid-representations", value: toAvoid };
     } else {
       log.debug("FR: Reloading because flush doesn't work");
       return { type: "reload", value: null };

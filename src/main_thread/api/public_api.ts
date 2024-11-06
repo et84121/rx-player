@@ -936,8 +936,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           autoPlay,
           bufferOptions,
           cmcd,
-          enableRepresentationDeprecation:
-            experimentalOptions.enableRepresentationDeprecation,
+          enableRepresentationAvoidance:
+            experimentalOptions.enableRepresentationAvoidance,
           keySystems,
           lowLatencyMode,
           transport: transportPipelines,
@@ -980,8 +980,8 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           autoPlay,
           bufferOptions,
           cmcd,
-          enableRepresentationDeprecation:
-            experimentalOptions.enableRepresentationDeprecation,
+          enableRepresentationAvoidance:
+            experimentalOptions.enableRepresentationAvoidance,
           keySystems,
           lowLatencyMode,
           transportOptions,

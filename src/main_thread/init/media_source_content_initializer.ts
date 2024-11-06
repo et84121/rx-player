@@ -726,10 +726,10 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
             playbackObserver.setCurrentTime(wantedSeekingTime);
             break;
           }
-          case "deprecate-representations": {
+          case "avoid-representations": {
             const contents = freezeResolution.value;
-            if (this._initSettings.enableRepresentationDeprecation) {
-              manifest.deprecateRepresentations(contents);
+            if (this._initSettings.enableRepresentationAvoidance) {
+              manifest.addRepresentationsToAvoid(contents);
             }
             triggerReload();
             break;
@@ -1211,11 +1211,11 @@ export interface IInitializeArguments {
    */
   cmcd?: ICmcdOptions | undefined;
   /**
-   * If `true`, the RxPlayer can enable its "Representation deprecation"
+   * If `true`, the RxPlayer can enable its "Representation avoidance"
    * mechanism, where it avoid loading Representation that it suspect
    * have issues being decoded on the current device.
    */
-  enableRepresentationDeprecation: boolean;
+  enableRepresentationAvoidance: boolean;
   /** Every encryption configuration set. */
   keySystems: IKeySystemOption[];
   /** `true` to play low-latency contents optimally. */

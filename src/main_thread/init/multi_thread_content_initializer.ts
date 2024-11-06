@@ -173,7 +173,7 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
       value: {
         contentId,
         cmcd: this._settings.cmcd,
-        enableRepresentationDeprecation: this._settings.enableRepresentationDeprecation,
+        enableRepresentationAvoidance: this._settings.enableRepresentationAvoidance,
         url: this._settings.url,
         hasText: this._hasTextBufferFeature(),
         transportOptions,
@@ -1903,11 +1903,11 @@ export interface IInitializeArguments {
    */
   cmcd?: ICmcdOptions | undefined;
   /**
-   * If `true`, the RxPlayer can enable its "Representation deprecation"
+   * If `true`, the RxPlayer can enable its "Representation avoidance"
    * mechanism, where it avoid loading Representation that it suspect
    * have issues being decoded on the current device.
    */
-  enableRepresentationDeprecation: boolean;
+  enableRepresentationAvoidance: boolean;
   /** Every encryption configuration set. */
   keySystems: IKeySystemOption[];
   /** `true` to play low-latency contents optimally. */

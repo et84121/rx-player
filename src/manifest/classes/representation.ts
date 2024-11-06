@@ -120,7 +120,7 @@ class Representation implements IRepresentationMetadata {
    * instanciated `Representation`, you are supposed to rely on
    * `Manifest` methods for this.
    */
-  public deprecated: boolean;
+  public shouldBeAvoided: boolean;
 
   /**
    * @param {Object} args
@@ -133,7 +133,7 @@ class Representation implements IRepresentationMetadata {
   ) {
     this.id = args.id;
     this.uniqueId = generateRepresentationUniqueId();
-    this.deprecated = false;
+    this.shouldBeAvoided = false;
     this.bitrate = args.bitrate;
     this.codecs = [];
     this.trackType = trackType;

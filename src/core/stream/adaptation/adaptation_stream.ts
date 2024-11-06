@@ -178,7 +178,7 @@ export default function AdaptationStream(
 
       // NOTE: We expect that the rest of the RxPlayer code is already handling
       // cases where the list of playable `Representation` changes:
-      // decipherability updates, `Representation` deprecation etc.
+      // decipherability updates, "`Representation` avoidance" etc.
       const newRepresentations = getRepresentationList(
         content.adaptation.representations,
         newRepIds,
@@ -562,12 +562,14 @@ function getRepresentationList(
 ): IRepresentation[] {
   const filteredRepresentations = availableRepresentations.filter(
     (r) =>
-      arrayIncludes(authorizedRepIds, r.id) && !r.deprecated && r.isPlayable() !== false,
+      arrayIncludes(authorizedRepIds, r.id) &&
+      !r.shouldBeAvoided &&
+      r.isPlayable() !== false,
   );
   if (filteredRepresentations.length > 0) {
     return filteredRepresentations;
   }
-  // Retry without deprecated `Representation`
+  // Retry without "`Representation` avoidance"
   return availableRepresentations.filter(
     (r) => arrayIncludes(authorizedRepIds, r.id) && r.isPlayable() !== false,
   );

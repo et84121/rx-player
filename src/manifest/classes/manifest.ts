@@ -79,10 +79,10 @@ export interface IManifestEvents {
   /** Some Representation's support status has been updated */
   supportUpdate: null;
   /**
-   * Some `Representation` have been "deprecated", meaning we should avoid
-   * playing them.
+   * Some `Representation`'s avoidance status has been updated, meaning that we
+   * might have to avoid playing them due to playback issues.
    */
-  deprecationUpdate: IUpdatedRepresentationInfo[];
+  representationAvoidanceUpdate: IUpdatedRepresentationInfo[];
 }
 
 /**
@@ -547,11 +547,11 @@ export default class Manifest
   }
 
   /**
-   * Mark some `Representation` as being "deprecated", meaning we should not
-   * attempt to load it anymore, unless forced.
+   * Indicate that some `Representation` needs to be avoided due to playback
+   * issues.
    * @param {Array.<Object>} items
    */
-  public deprecateRepresentations(
+  public addRepresentationsToAvoid(
     items: Array<{
       period: Period;
       adaptation: Adaptation;
@@ -572,7 +572,7 @@ export default class Manifest
       if (representation === undefined) {
         continue;
       }
-      representation.deprecated = true;
+      representation.shouldBeAvoided = true;
       updates.push({
         manifest: this,
         period,
@@ -581,7 +581,7 @@ export default class Manifest
       });
     }
     if (updates.length > 0) {
-      this.trigger("deprecationUpdate", updates);
+      this.trigger("representationAvoidanceUpdate", updates);
     }
   }
 
