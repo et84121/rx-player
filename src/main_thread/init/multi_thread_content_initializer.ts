@@ -62,7 +62,7 @@ import sendMessage from "./send_message";
 import type { ITextDisplayerOptions } from "./types";
 import { ContentInitializer } from "./types";
 import createCorePlaybackObserver from "./utils/create_core_playback_observer";
-import { resetMediaElement } from "./utils/create_media_source";
+import { resetMediaElement, disableRemotePlayback } from "./utils/create_media_source";
 import type { IInitialTimeOptions } from "./utils/get_initial_time";
 import getInitialTime from "./utils/get_initial_time";
 import getLoadedReference from "./utils/get_loaded_reference";
@@ -463,29 +463,10 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
                     resetMediaElement(mediaElement, mediaSourceLink.value);
                   });
                 }
-                const disableRemotePlaybackPreviousValue =
-                  mediaElement.disableRemotePlayback;
-                this._currentMediaSourceCanceller.signal.register(() => {
-                  /**
-                   * This reset the disableRemotePlayback attribute to the previous value
-                   * in order to restore the <video> element has it was set by the application
-                   * before calling the RxPlayer.
-                   */
-                  if (
-                    "disableRemotePlayback" in mediaElement &&
-                    disableRemotePlaybackPreviousValue !== undefined
-                  ) {
-                    mediaElement.disableRemotePlayback =
-                      disableRemotePlaybackPreviousValue;
-                  }
-                });
-                /**
-                 * Using ManagedMediaSource needs to disableRemotePlayback or to provide
-                 * an Airplay source alternative, such as HLS.
-                 * https://github.com/w3c/media-source/issues/320
-                 */
-                mediaElement.disableRemotePlayback = true;
-
+                disableRemotePlayback(
+                  mediaElement,
+                  this._currentMediaSourceCanceller.signal,
+                );
                 mediaSourceStatus.setValue(MediaSourceInitializationStatus.Attached);
               }
             },
