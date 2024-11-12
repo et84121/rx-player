@@ -523,23 +523,26 @@ function loadOrReloadPreparedContent(
     segmentQueueCreator,
   } = preparedContent;
   const { drmSystemId, enableFastSwitching, initialTime, onCodecSwitch } = val;
-  playbackObservationRef.onUpdate((observation) => {
-    if (preparedContent.decipherabilityFreezeDetector.needToReload(observation)) {
-      handleMediaSourceReload({
-        timeOffset: 0,
-        minimumPosition: 0,
-        maximumPosition: Infinity,
-      });
-    }
-
-    // Synchronize SegmentSinks with what has been buffered.
-    ["video" as const, "audio" as const, "text" as const].forEach((tType) => {
-      const segmentSinkStatus = segmentSinksStore.getStatus(tType);
-      if (segmentSinkStatus.type === "initialized") {
-        segmentSinkStatus.value.synchronizeInventory(observation.buffered[tType] ?? []);
+  playbackObservationRef.onUpdate(
+    (observation) => {
+      if (preparedContent.decipherabilityFreezeDetector.needToReload(observation)) {
+        handleMediaSourceReload({
+          timeOffset: 0,
+          minimumPosition: 0,
+          maximumPosition: Infinity,
+        });
       }
-    });
-  });
+
+      // Synchronize SegmentSinks with what has been buffered.
+      ["video" as const, "audio" as const, "text" as const].forEach((tType) => {
+        const segmentSinkStatus = segmentSinksStore.getStatus(tType);
+        if (segmentSinkStatus.type === "initialized") {
+          segmentSinkStatus.value.synchronizeInventory(observation.buffered[tType] ?? []);
+        }
+      });
+    },
+    { clearSignal: currentLoadCanceller.signal },
+  );
 
   const initialPeriod =
     manifest.getPeriodForTime(initialTime) ?? manifest.getNextPeriod(initialTime);

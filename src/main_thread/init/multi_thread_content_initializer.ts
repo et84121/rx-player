@@ -901,46 +901,52 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
           const ref = new SharedReference<IAdaptationChoice | null | undefined>(
             undefined,
           );
-          ref.onUpdate((adapChoice) => {
-            if (this._currentContentInfo === null) {
-              ref.finish();
-              return;
-            }
-            if (!isNullOrUndefined(adapChoice)) {
-              adapChoice.representations.onUpdate((repChoice, stopListening) => {
-                if (this._currentContentInfo === null) {
-                  stopListening();
-                  return;
-                }
-                sendMessage(this._settings.worker, {
-                  type: MainThreadMessageType.RepresentationUpdate,
-                  contentId: this._currentContentInfo.contentId,
-                  value: {
-                    periodId: msgData.value.periodId,
-                    adaptationId: adapChoice.adaptationId,
-                    bufferType: msgData.value.bufferType,
-                    choice: repChoice,
+          ref.onUpdate(
+            (adapChoice) => {
+              if (this._currentContentInfo === null) {
+                ref.finish();
+                return;
+              }
+              if (!isNullOrUndefined(adapChoice)) {
+                adapChoice.representations.onUpdate(
+                  (repChoice, stopListening) => {
+                    if (this._currentContentInfo === null) {
+                      stopListening();
+                      return;
+                    }
+                    sendMessage(this._settings.worker, {
+                      type: MainThreadMessageType.RepresentationUpdate,
+                      contentId: this._currentContentInfo.contentId,
+                      value: {
+                        periodId: msgData.value.periodId,
+                        adaptationId: adapChoice.adaptationId,
+                        bufferType: msgData.value.bufferType,
+                        choice: repChoice,
+                      },
+                    });
                   },
-                });
+                  { clearSignal: this._initCanceller.signal },
+                );
+              }
+              sendMessage(this._settings.worker, {
+                type: MainThreadMessageType.TrackUpdate,
+                contentId: this._currentContentInfo.contentId,
+                value: {
+                  periodId: msgData.value.periodId,
+                  bufferType: msgData.value.bufferType,
+                  choice: isNullOrUndefined(adapChoice)
+                    ? adapChoice
+                    : {
+                        adaptationId: adapChoice.adaptationId,
+                        switchingMode: adapChoice.switchingMode,
+                        initialRepresentations: adapChoice.representations.getValue(),
+                        relativeResumingPosition: adapChoice.relativeResumingPosition,
+                      },
+                },
               });
-            }
-            sendMessage(this._settings.worker, {
-              type: MainThreadMessageType.TrackUpdate,
-              contentId: this._currentContentInfo.contentId,
-              value: {
-                periodId: msgData.value.periodId,
-                bufferType: msgData.value.bufferType,
-                choice: isNullOrUndefined(adapChoice)
-                  ? adapChoice
-                  : {
-                      adaptationId: adapChoice.adaptationId,
-                      switchingMode: adapChoice.switchingMode,
-                      initialRepresentations: adapChoice.representations.getValue(),
-                      relativeResumingPosition: adapChoice.relativeResumingPosition,
-                    },
-              },
-            });
-          });
+            },
+            { clearSignal: this._initCanceller.signal },
+          );
           this.trigger("periodStreamReady", {
             period,
             type: msgData.value.bufferType,

@@ -216,9 +216,9 @@ export interface IReadOnlyPlaybackObserver<TObservationType> {
    */
   listen(
     cb: (observation: TObservationType, stopListening: () => void) => void,
-    options?: {
+    options: {
       includeLastObservation?: boolean | undefined;
-      clearSignal?: CancellationSignal | undefined;
+      clearSignal: CancellationSignal;
     },
   ): void;
   /**

@@ -258,7 +258,7 @@ export default class PlaybackObserver {
   /**
    * Register a callback so it regularly receives playback observations.
    * @param {Function} cb
-   * @param {Object} options - Configuration options:
+   * @param {Object} params - Configuration parameters:
    *   - `includeLastObservation`: If set to `true` the last observation will
    *     be first emitted synchronously.
    *   - `clearSignal`: If set, the callback will be unregistered when this
@@ -266,17 +266,17 @@ export default class PlaybackObserver {
    */
   public listen(
     cb: (observation: IPlaybackObservation, stopListening: () => void) => void,
-    options?: {
+    params: {
       includeLastObservation?: boolean | undefined;
-      clearSignal?: CancellationSignal | undefined;
+      clearSignal: CancellationSignal;
     },
   ) {
-    if (this._canceller.isUsed() || options?.clearSignal?.isCancelled() === true) {
+    if (this._canceller.isUsed() || params.clearSignal.isCancelled()) {
       return noop;
     }
     this._observationRef.onUpdate(cb, {
-      clearSignal: options?.clearSignal,
-      emitCurrentValue: options?.includeLastObservation,
+      clearSignal: params.clearSignal,
+      emitCurrentValue: params.includeLastObservation,
     });
   }
 
