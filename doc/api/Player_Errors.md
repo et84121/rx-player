@@ -262,7 +262,7 @@ the following properties:
   - `frameRate` (`string|undefined`): The video frame rate.
 
   - `hdrInfo` (`Object|undefined`) Information about the hdr characteristics of the track.
-    (see [HDR support documentation](./Miscellaneous/hdr.md#hdrinfo))
+    (see [HDR support documentation](hdr.md#hdrinfo))
 
   - `isCodecSupported` (`Boolean|undefined`): If `true` the codec(s) of that
     Representation is supported by the current platform.
