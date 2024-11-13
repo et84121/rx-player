@@ -11,6 +11,42 @@ import type SegmentSinksStore from "../../segment_sinks";
 import type { IBufferedChunk } from "../../segment_sinks";
 
 /**
+ * "Freezing" is a complex situation indicating that playback is not advancing
+ * despite no valid reason for it not to.
+ *
+ * Technically, there's multiple scenarios in which the RxPlayer will consider
+ * the stream as "freezing" and try to fix it.
+ * One of those scenarios is when there's a
+ * `HTMLMediaElement.prototype.readyState` set to `1` (which is how the browser
+ * tells us that it doesn't have any data to play), despite the fact that
+ * there's actually data in the buffer.
+ *
+ * The `MINIMUM_BUFFER_GAP_AT_READY_STATE_1_BEFORE_FREEZING` is the minimum
+ * buffer size in seconds after which we will suspect a "freezing" scenario if
+ * the `readyState` is still at `1`.
+ */
+const MINIMUM_BUFFER_GAP_AT_READY_STATE_1_BEFORE_FREEZING = 6;
+
+/**
+ * To avoid handling freezes (e.g. "reloading" or "seeking") in a loop when
+ * things go wrong, we have a security delay in milliseconds, this
+ * `MINIMUM_TIME_BETWEEN_FREEZE_HANDLING` constant, which we'll await between
+ * un-freezing attempts.
+ */
+const MINIMUM_TIME_BETWEEN_FREEZE_HANDLING = 6000;
+
+/**
+ * We maintain here a short-term history of what segments have been played
+ * recently, to then implement heuristics detecting if a freeze was due to a
+ * particular quality or track.
+ *
+ * To avoid growing that history indefinitely in size, we only save data
+ * corresponding to the last `MAXIMUM_SEGMENT_HISTORY_RETENTION_TIME`
+ * milliseconds from now.
+ */
+const MAXIMUM_SEGMENT_HISTORY_RETENTION_TIME = 60000;
+
+/**
  * Set when there is a freeze which seems to be specifically linked to a,
  * or multiple, content's `Representation` despite no attribute of it
  * indicating so (i.e. it is decodable and decipherable).
@@ -139,9 +175,9 @@ export default class FreezeResolver {
 
   /**
    * Check that playback is not freezing, and if it is, return a solution that
-   * should be atempted to unfreeze it.
+   * should be attempted to unfreeze it.
    *
-   * Returns `null` either when there's no freeze is happening or if there's one
+   * Returns `null` either when there's no freeze happening or if there's one
    * but there's nothing we should do about it yet.
    *
    * Refer to the returned type's definition for more information.
@@ -178,7 +214,10 @@ export default class FreezeResolver {
       // playback. Yet, rebuffering occurences can also be abnormal, such as
       // when enough buffer is constructed but with a low readyState (those are
       // generally decryption issues).
-      (rebuffering !== null && readyState === 1 && (bufferGap >= 6 || fullyLoaded));
+      (rebuffering !== null &&
+        readyState === 1 &&
+        (bufferGap >= MINIMUM_BUFFER_GAP_AT_READY_STATE_1_BEFORE_FREEZING ||
+          fullyLoaded));
 
     if (!isFrozen) {
       this._decipherabilityFreezeStartingTimestamp = null;
@@ -202,7 +241,7 @@ export default class FreezeResolver {
     if (recentFlushAttemptFailed) {
       const secondUnfreezeStrat = this._getStrategyIfFlushingFails(freezingPosition);
       this._decipherabilityFreezeStartingTimestamp = null;
-      this._ignoreFreezeUntil = now + 6000;
+      this._ignoreFreezeUntil = now + MINIMUM_TIME_BETWEEN_FREEZE_HANDLING;
       return secondUnfreezeStrat;
     }
 
@@ -222,7 +261,7 @@ export default class FreezeResolver {
       log.debug("FR: trying to flush to un-freeze");
 
       this._decipherabilityFreezeStartingTimestamp = null;
-      this._ignoreFreezeUntil = now + 6000;
+      this._ignoreFreezeUntil = now + MINIMUM_TIME_BETWEEN_FREEZE_HANDLING;
       return {
         type: "flush",
         value: { relativeSeek: UNFREEZING_DELTA_POSITION },
@@ -280,7 +319,7 @@ export default class FreezeResolver {
           if (representation.decipherable === false) {
             log.warn("FR: we have undecipherable segments left in the buffer, reloading");
             this._decipherabilityFreezeStartingTimestamp = null;
-            this._ignoreFreezeUntil = now + 6000;
+            this._ignoreFreezeUntil = now + MINIMUM_TIME_BETWEEN_FREEZE_HANDLING;
             return { type: "reload", value: null };
           } else if (representation.contentProtections !== undefined) {
             isClear = false;
@@ -298,7 +337,7 @@ export default class FreezeResolver {
           "segments left in the buffer, reloading",
       );
       this._decipherabilityFreezeStartingTimestamp = null;
-      this._ignoreFreezeUntil = now + 6000;
+      this._ignoreFreezeUntil = now + MINIMUM_TIME_BETWEEN_FREEZE_HANDLING;
       return { type: "reload", value: null };
     }
     return null;
@@ -459,7 +498,7 @@ export default class FreezeResolver {
         this._lastSegmentInfo[ttype].splice(0, toRemove);
       }
 
-      const removalTs = currentTimestamp - 60000;
+      const removalTs = currentTimestamp - MAXIMUM_SEGMENT_HISTORY_RETENTION_TIME;
       let i;
       for (i = 0; i < this._lastSegmentInfo[ttype].length; i++) {
         if (this._lastSegmentInfo[ttype][i].timestamp > removalTs) {

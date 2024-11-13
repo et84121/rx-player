@@ -891,7 +891,7 @@ function loadOrReloadPreparedContent(
     );
     contentPreparer.reloadMediaSource(payload).then(
       () => {
-        log.info("WP: MediaSource Reloaded, loading...");
+        log.info("WP: MediaSource Reloaded, loading content again");
         loadOrReloadPreparedContent(
           {
             initialTime: newInitialTime,
