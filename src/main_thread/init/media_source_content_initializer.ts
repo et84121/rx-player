@@ -27,7 +27,9 @@ import AdaptiveRepresentationSelector from "../../core/adaptive";
 import CmcdDataBuilder from "../../core/cmcd";
 import { ManifestFetcher, SegmentQueueCreator } from "../../core/fetchers";
 import createContentTimeBoundariesObserver from "../../core/main/common/create_content_time_boundaries_observer";
+import type { IFreezeResolution } from "../../core/main/common/FreezeResolver";
 import FreezeResolver from "../../core/main/common/FreezeResolver";
+import synchronizeSegmentSinksOnObservation from "../../core/main/common/synchronize_sinks_on_observation";
 import SegmentSinksStore from "../../core/segment_sinks";
 import type {
   IStreamOrchestratorOptions,
@@ -687,70 +689,32 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
       );
     }
 
-    // Handle "FREEZING" situation and try to un-freeze
-    playbackObserver.listen(
+    coreObserver.listen(
       (observation) => {
+        synchronizeSegmentSinksOnObservation(observation, segmentSinksStore);
         const freezeResolution = freezeResolver.onNewObservation(observation);
         if (freezeResolution === null) {
           return;
         }
 
+        // TODO: The following method looks generic, we may be able to factorize
+        // it with other reload handlers after some work.
         const triggerReload = () => {
-          let position: number;
           const lastObservation = playbackObserver.getReference().getValue();
-          if (lastObservation.position.isAwaitingFuturePosition()) {
-            position = lastObservation.position.getWanted();
-          } else {
-            position = playbackObserver.getCurrentTime();
-          }
-
+          const position = lastObservation.position.isAwaitingFuturePosition()
+            ? lastObservation.position.getWanted()
+            : (coreObserver.getCurrentTime() ?? lastObservation.position.getPolled());
           const autoplay = initialPlayPerformed.getValue()
             ? !playbackObserver.getIsPaused()
             : autoPlay;
           onReloadOrder({ position, autoPlay: autoplay });
         };
 
-        switch (freezeResolution.type) {
-          case "reload": {
-            log.info("Init: Planning reload due to freeze");
-            triggerReload();
-            break;
-          }
-          case "flush": {
-            log.info("Init: Flushing buffer due to freeze");
-            const currentTime = observation.position.isAwaitingFuturePosition()
-              ? observation.position.getWanted()
-              : playbackObserver.getCurrentTime();
-            const relativeResumingPosition = freezeResolution.value.relativeSeek;
-            const wantedSeekingTime = currentTime + relativeResumingPosition;
-            playbackObserver.setCurrentTime(wantedSeekingTime);
-            break;
-          }
-          case "avoid-representations": {
-            const contents = freezeResolution.value;
-            if (this._initSettings.enableRepresentationAvoidance) {
-              manifest.addRepresentationsToAvoid(contents);
-            }
-            triggerReload();
-            break;
-          }
-          default:
-            assertUnreachable(freezeResolution);
-        }
-      },
-      { clearSignal: cancelSignal },
-    );
-
-    // Synchronize SegmentSinks with what has been buffered.
-    coreObserver.listen(
-      (observation) => {
-        ["video" as const, "audio" as const, "text" as const].forEach((tType) => {
-          const segmentSinkStatus = segmentSinksStore.getStatus(tType);
-          if (segmentSinkStatus.type === "initialized") {
-            segmentSinkStatus.value.synchronizeInventory(
-              observation.buffered[tType] ?? [],
-            );
-          }
+        handleFreezeResolution(freezeResolution, {
+          enableRepresentationAvoidance: this._initSettings.enableRepresentationAvoidance,
+          manifest,
+          triggerReload,
+          playbackObserver,
         });
       },
       { clearSignal: cancelSignal },
@@ -1405,3 +1369,61 @@ type IReloadMediaSourceCallback = (reloadOrder: {
   position: number;
   autoPlay: boolean;
 }) => void;
+
+/**
+ * Handle accordingly an `IFreezeResolution` object.
+ * @param {Object|null} freezeResolution - The `IFreezeResolution` suggested.
+ * @param {Object} param - Parameters that might be needed to implement the
+ * resolution.
+ * @param {Object} param.manifest - The current content's Manifest object.
+ * @param {Object} param.playbackObserver - Object regularly emitting playback
+ * conditions.
+ * @param {Function} param.triggerReload - Function to call if we need to ask
+ * for a "MediaSource reload".
+ * @param {Boolean} param.enableRepresentationAvoidance - If `true`, this
+ * function is authorized to mark `Representation` as "to avoid" if the
+ * `IFreezeResolution` object suggest it.
+ */
+function handleFreezeResolution(
+  freezeResolution: IFreezeResolution,
+  {
+    playbackObserver,
+    enableRepresentationAvoidance,
+    manifest,
+    triggerReload,
+  }: {
+    playbackObserver: IMediaElementPlaybackObserver;
+    enableRepresentationAvoidance: boolean;
+    manifest: IManifest;
+    triggerReload: () => void;
+  },
+): void {
+  switch (freezeResolution.type) {
+    case "reload": {
+      log.info("Init: Planning reload due to freeze");
+      triggerReload();
+      break;
+    }
+    case "flush": {
+      log.info("Init: Flushing buffer due to freeze");
+      const observation = playbackObserver.getReference().getValue();
+      const currentTime = observation.position.isAwaitingFuturePosition()
+        ? observation.position.getWanted()
+        : playbackObserver.getCurrentTime();
+      const relativeResumingPosition = freezeResolution.value.relativeSeek;
+      const wantedSeekingTime = currentTime + relativeResumingPosition;
+      playbackObserver.setCurrentTime(wantedSeekingTime);
+      break;
+    }
+    case "avoid-representations": {
+      const contents = freezeResolution.value;
+      if (enableRepresentationAvoidance) {
+        manifest.addRepresentationsToAvoid(contents);
+      }
+      triggerReload();
+      break;
+    }
+    default:
+      assertUnreachable(freezeResolution);
+  }
+}

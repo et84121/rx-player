@@ -27,7 +27,6 @@ import type { IReadOnlySharedReference } from "../../../utils/reference";
 import SharedReference from "../../../utils/reference";
 import type { CancellationSignal } from "../../../utils/task_canceller";
 import TaskCanceller from "../../../utils/task_canceller";
-import type SegmentSinksStore from "../../segment_sinks";
 import type {
   INeedsMediaSourceReloadPayload,
   IStreamOrchestratorCallbacks,
@@ -37,6 +36,7 @@ import StreamOrchestrator from "../../stream";
 import createContentTimeBoundariesObserver from "../common/create_content_time_boundaries_observer";
 import type { IFreezeResolution } from "../common/FreezeResolver";
 import getBufferedDataPerMediaBuffer from "../common/get_buffered_data_per_media_buffer";
+import synchronizeSegmentSinksOnObservation from "../common/synchronize_sinks_on_observation";
 import ContentPreparer from "./content_preparer";
 import {
   limitVideoResolution,
@@ -967,26 +967,6 @@ function sendSegmentSinksStoreInfos(
     type: WorkerMessageType.SegmentSinkStoreUpdate,
     contentId: currentContent.contentId,
     value: { segmentSinkMetrics: segmentSinksMetrics, messageId },
-  });
-}
-
-/**
- * Synchronize SegmentSinks with what has been buffered.
- * @param {Object} observation - The just-received playback observation,
- * including what has been buffered on lower-level buffers
- * @param {Object} segmentSinksStore - Interface allowing to interact
- * with `SegmentSink`s, so their inventory can be updated accordingly.
- */
-function synchronizeSegmentSinksOnObservation(
-  observation: IWorkerPlaybackObservation,
-  segmentSinksStore: SegmentSinksStore,
-): void {
-  // Synchronize SegmentSinks with what has been buffered.
-  ["video" as const, "audio" as const, "text" as const].forEach((tType) => {
-    const segmentSinkStatus = segmentSinksStore.getStatus(tType);
-    if (segmentSinkStatus.type === "initialized") {
-      segmentSinkStatus.value.synchronizeInventory(observation.buffered[tType] ?? []);
-    }
   });
 }
 
