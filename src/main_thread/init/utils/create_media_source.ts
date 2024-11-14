@@ -71,7 +71,7 @@ export function resetMediaElement(
  * @param {CancellationSignal} cancellationSignal - The signal that, when triggered,
  * restores the `disableRemotePlayback` attribute to its original value.
  */
-export function disableRemotePlayback(
+export function disableRemotePlaybackOnManagedMediaSource(
   mediaElement: IMediaElement,
   cancellationSignal: CancellationSignal,
 ) {
@@ -115,7 +115,7 @@ function createMediaSource(
   const oldSrc = isNonEmptyString(mediaElement.src) ? mediaElement.src : null;
   resetMediaElement(mediaElement, oldSrc);
   const mediaSource = new MainMediaSourceInterface(generateMediaSourceId());
-  disableRemotePlayback(mediaElement, unlinkSignal);
+  disableRemotePlaybackOnManagedMediaSource(mediaElement, unlinkSignal);
   unlinkSignal.register(() => {
     mediaSource.dispose();
   });

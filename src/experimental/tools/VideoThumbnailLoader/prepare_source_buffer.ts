@@ -19,7 +19,7 @@ import type { IMediaElement } from "../../../compat/browser_compatibility_types"
 import log from "../../../log";
 import {
   resetMediaElement,
-  disableRemotePlayback,
+  disableRemotePlaybackOnManagedMediaSource,
 } from "../../../main_thread/init/utils/create_media_source";
 import { SourceBufferType } from "../../../mse";
 import type { MainSourceBufferInterface } from "../../../mse/main_media_source_interface";
@@ -69,7 +69,7 @@ export default function prepareSourceBuffer(
         resetMediaElement(videoElement, objectURL);
       });
     }
-    disableRemotePlayback(videoElement, cleanUpSignal);
+    disableRemotePlaybackOnManagedMediaSource(videoElement, cleanUpSignal);
 
     mediaSource.addEventListener("mediaSourceOpen", onSourceOpen);
     return () => {
