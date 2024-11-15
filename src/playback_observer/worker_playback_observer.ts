@@ -111,21 +111,18 @@ export default class WorkerPlaybackObserver
 
   public listen(
     cb: (observation: IWorkerPlaybackObservation, stopListening: () => void) => void,
-    options?: {
+    params: {
       includeLastObservation?: boolean | undefined;
-      clearSignal?: CancellationSignal | undefined;
+      clearSignal: CancellationSignal;
     },
   ): void {
-    if (
-      this._cancelSignal.isCancelled() ||
-      options?.clearSignal?.isCancelled() === true
-    ) {
+    if (this._cancelSignal.isCancelled() || params.clearSignal.isCancelled()) {
       return;
     }
 
     this._src.onUpdate(cb, {
-      clearSignal: options?.clearSignal,
-      emitCurrentValue: options?.includeLastObservation,
+      clearSignal: params.clearSignal,
+      emitCurrentValue: params.includeLastObservation,
     });
   }
 
