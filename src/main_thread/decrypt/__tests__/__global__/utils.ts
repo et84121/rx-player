@@ -115,7 +115,6 @@ export class MediaKeyStatusMapImpl {
       key: BufferSource,
       parent: MediaKeyStatusMapImpl,
     ) => void,
-    // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
     thisArg?: unknown,
   ): void {
     this._map.forEach((value, key) => callbackfn.bind(thisArg, value, key, this));
@@ -273,7 +272,6 @@ class MockedDecryptorEventEmitter extends EventEmitter<{
 /**
  * Mock functions coming from the compat directory.
  */
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function mockCompat(
   presets: {
     canReuseMediaKeys?: MockInstance;
