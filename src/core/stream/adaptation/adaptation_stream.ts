@@ -116,6 +116,16 @@ export default function AdaptationStream(
     adapStreamCanceller.signal,
   );
 
+  const canStream = new SharedReference<boolean>(true);
+  /** Update the `canLoad` ref on observation update */
+  playbackObserver.listen((observation) => {
+    const observationCanStream = observation.canStream ?? true;
+    if (canStream.getValue() !== observationCanStream) {
+      log.debug("Stream: observation.canStream updated to", observationCanStream);
+      canStream.setValue(observationCanStream);
+    }
+  });
+
   /** Allows a `RepresentationStream` to easily fetch media segments. */
   const segmentQueue = segmentQueueCreator.createSegmentQueue(
     adaptation.type,
@@ -126,6 +136,7 @@ export default function AdaptationStream(
       onProgress: abrCallbacks.requestProgress,
       onMetrics: abrCallbacks.metrics,
     },
+    canStream,
   );
   /* eslint-enable @typescript-eslint/unbound-method */
 

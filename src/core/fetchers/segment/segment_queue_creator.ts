@@ -16,6 +16,7 @@
 
 import config from "../../../config";
 import type { ISegmentPipeline, ITransportPipelines } from "../../../transports";
+import type SharedReference from "../../../utils/reference";
 import type { CancellationSignal } from "../../../utils/task_canceller";
 import type CmcdDataBuilder from "../../cmcd";
 import type { IBufferType } from "../../segment_sinks";
@@ -96,6 +97,7 @@ export default class SegmentQueueCreator {
   public createSegmentQueue(
     bufferType: IBufferType,
     eventListeners: ISegmentFetcherLifecycleCallbacks,
+    canLoad: SharedReference<boolean>,
   ): SegmentQueue<unknown> {
     const requestOptions = getSegmentFetcherRequestOptions(this._backoffOptions);
     const pipelines = this._transport[bufferType];
@@ -113,7 +115,7 @@ export default class SegmentQueueCreator {
       this._prioritizer,
       segmentFetcher,
     );
-    return new SegmentQueue(prioritizedSegmentFetcher);
+    return new SegmentQueue(prioritizedSegmentFetcher, canLoad);
   }
 }
 

@@ -212,20 +212,19 @@ export default function RepresentationStream<TSegmentDataType>(
 
   const canStream = new SharedReference<boolean>(true);
 
-  playbackObserver.listen((observation) => {
-    const observationCanStream = observation.canStream ?? true;
-    if (canStream.getValue() !== observationCanStream) {
-      log.debug("Stream: observation.canStream updated to", observationCanStream);
-      canStream.setValue(observationCanStream);
-    }
-  });
+  playbackObserver.listen(
+    (observation) => {
+      const observationCanStream = observation.canStream ?? true;
+      if (canStream.getValue() !== observationCanStream) {
+        log.debug("Stream: observation.canStream updated to", observationCanStream);
+        canStream.setValue(observationCanStream);
+      }
+    },
+    { clearSignal: segmentsLoadingCanceller.signal },
+  );
 
   /** Emit the last scheduled downloading queue for segments. */
-  const segmentsToLoadRef = segmentQueue.resetForContent(
-    content,
-    hasInitSegment,
-    canStream,
-  );
+  const segmentsToLoadRef = segmentQueue.resetForContent(content, hasInitSegment);
 
   segmentsLoadingCanceller.signal.register(() => {
     segmentQueue.stop();
