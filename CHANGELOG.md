@@ -1,13 +1,23 @@
 # Changelog
 
-## Current dev build: v4.2.1-dev.2024102300
+## Current dev build: v4.3.0-dev.2024111800
+
+### Features
+
+- Add the possibility to rely on `ManagedMediaSource` on iOS devices [#1562]
 
 ### Bug fixes
 
-- MULTI_THREAD: Fix `onmessageerror` being undefined on older devices [#1587]
+- MULTI_THREAD: Fix `onmessageerror` being undefined on older devices [#1585]
+- Compat: On "FREEZING" try to un-freeze regardless of if the wanted position was reached
+  to fix a remaining Tizen (Samsung) infinite rebuffering issue [#1586]
 
 ### Other improvements
 
+- Compat: Limit long "FREEZING" issues on Tizen (samsung) by awaiting for browser action
+  before seeking ourselves over a discontinuity [#1587]
+- DRM: Only reuse cached `MediaKeySystemAccess` if none is more wanted for the current
+  content [#1591]
 - DEBUG_ELEMENT: Add buffer size estimate to debug buffer content graph [#1558]
 - DEBUG_ELEMENT: Add `hdr` information to video Representation [#1583]
 
