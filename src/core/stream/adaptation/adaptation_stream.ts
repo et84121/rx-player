@@ -118,13 +118,16 @@ export default function AdaptationStream(
 
   const canStream = new SharedReference<boolean>(true);
   /** Update the `canLoad` ref on observation update */
-  playbackObserver.listen((observation) => {
-    const observationCanStream = observation.canStream ?? true;
-    if (canStream.getValue() !== observationCanStream) {
-      log.debug("Stream: observation.canStream updated to", observationCanStream);
-      canStream.setValue(observationCanStream);
-    }
-  });
+  playbackObserver.listen(
+    (observation) => {
+      const observationCanStream = observation.canStream ?? true;
+      if (canStream.getValue() !== observationCanStream) {
+        log.debug("Stream: observation.canStream updated to", observationCanStream);
+        canStream.setValue(observationCanStream);
+      }
+    },
+    { clearSignal: adapStreamCanceller.signal },
+  );
 
   /** Allows a `RepresentationStream` to easily fetch media segments. */
   const segmentQueue = segmentQueueCreator.createSegmentQueue(
