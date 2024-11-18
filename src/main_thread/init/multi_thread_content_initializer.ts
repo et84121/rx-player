@@ -1,4 +1,4 @@
-import { type IMediaElement } from "../../compat/browser_compatibility_types";
+import type { IMediaElement } from "../../compat/browser_compatibility_types";
 import mayMediaElementFailOnUndecipherableData from "../../compat/may_media_element_fail_on_undecipherable_data";
 import shouldReloadMediaSourceOnDecipherabilityUpdate from "../../compat/should_reload_media_source_on_decipherability_update";
 import type { ISegmentSinkMetrics } from "../../core/segment_sinks/segment_sinks_store";
