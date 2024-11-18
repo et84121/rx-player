@@ -57,31 +57,35 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
   private _currentContentInfo: ISegmentQueueContentInfo | null;
 
   /**
-   * Indicates whether the user agent believes it has enough buffered data to ensure
-   * uninterrupted playback for a meaningful period or needs more data.
-   * It also reflects whether the user agent can retrieve and buffer data in an
-   * energy-efficient manner while maintaining the desired memory usage.
-   * The value can be `undefined` if the user agent does not provide this indicator.
-   * `true` indicates that the buffer is low, and more data should be buffered.
-   * `false` indicates that there is enough buffered data, and no additional data needs
-   *  to be buffered at this time.
+   * Indicates whether the segment queue is inturrupted or if
+   * it is authorized to download segment data.
+   * Updating this value to `true` should stop the
+   * loading of new media data. Updating this value to `false` should
+   * restart the downloading queue.
+   * Note: this does not affect the downloading of init segment as
+   * they are always downloaded, regardless of this property value.
+   *
+   * This option can be used to temporarly reduce the usage of the
+   * network.
    */
-  private canLoad: SharedReference<boolean>;
+  private isMediaSegmentQueueInterrupted: SharedReference<boolean>;
 
   /**
    * Create a new `SegmentQueue`.
    *
    * @param {Object} segmentFetcher - Interface to facilitate the download of
    * segments.
+   * @param {Object} isMediaSegmentQueueInterrupted - Reference to a boolean indicating
+   * if the media segment queue is interrupted.
    */
   constructor(
     segmentFetcher: IPrioritizedSegmentFetcher<T>,
-    canLoad: SharedReference<boolean>,
+    isMediaSegmentQueueInterrupted: SharedReference<boolean>,
   ) {
     super();
     this._segmentFetcher = segmentFetcher;
     this._currentContentInfo = null;
-    this.canLoad = canLoad;
+    this.isMediaSegmentQueueInterrupted = isMediaSegmentQueueInterrupted;
   }
 
   /**
@@ -115,8 +119,6 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
    * load segments for.
    * @param {boolean} hasInitSegment - Declare that an initialization segment
    * will need to be downloaded.
-   * @param {Object} canLoad - Indicates if the loading of new segment is authorized,
-   * it can be temporarily forbiddden if there is enough buffered data.
    *
    * A `SegmentQueue` ALWAYS wait for the initialization segment to be
    * loaded and parsed before parsing a media segment.
@@ -157,9 +159,9 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
     };
     this._currentContentInfo = currentContentInfo;
 
-    this.canLoad.onUpdate(
+    this.isMediaSegmentQueueInterrupted.onUpdate(
       (val) => {
-        if (val) {
+        if (!val) {
           log.debug(
             "SQ: Media segment can be loaded again, restarting queue.",
             content.adaptation.type,
@@ -288,7 +290,7 @@ export default class SegmentQueue<T> extends EventEmitter<ISegmentQueueEvent<T>>
     const { downloadQueue, content, initSegmentInfoRef, currentCanceller } = contentInfo;
 
     const recursivelyRequestSegments = (): void => {
-      if (!this.canLoad.getValue()) {
+      if (this.isMediaSegmentQueueInterrupted.getValue()) {
         log.debug("SQ: Segment fetching postponed because it cannot stream now.");
         return;
       }
