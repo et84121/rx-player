@@ -59,7 +59,10 @@ import sendMessage from "./send_message";
 import type { ITextDisplayerOptions } from "./types";
 import { ContentInitializer } from "./types";
 import createCorePlaybackObserver from "./utils/create_core_playback_observer";
-import { resetMediaElement } from "./utils/create_media_source";
+import {
+  resetMediaElement,
+  disableRemotePlaybackOnManagedMediaSource,
+} from "./utils/create_media_source";
 import type { IInitialTimeOptions } from "./utils/get_initial_time";
 import getInitialTime from "./utils/get_initial_time";
 import getLoadedReference from "./utils/get_loaded_reference";
@@ -460,6 +463,10 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
                     resetMediaElement(mediaElement, mediaSourceLink.value);
                   });
                 }
+                disableRemotePlaybackOnManagedMediaSource(
+                  mediaElement,
+                  this._currentMediaSourceCanceller.signal,
+                );
                 mediaSourceStatus.setValue(MediaSourceInitializationStatus.Attached);
               }
             },
@@ -1793,6 +1800,10 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
                 resetMediaElement(mediaElement, url);
               });
               mediaSourceStatus.setValue(MediaSourceInitializationStatus.Attached);
+              disableRemotePlaybackOnManagedMediaSource(
+                mediaElement,
+                this._currentMediaSourceCanceller.signal,
+              );
             }
           },
           {

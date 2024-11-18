@@ -82,6 +82,16 @@ export interface ICorePlaybackObservation {
   rebuffering: IRebufferingStatus | null;
   freezing: IFreezingStatus | null;
   bufferGap: number | undefined;
+  /**
+   * Indicates whether the user agent believes it has enough buffered data to ensure
+   * uninterrupted playback for a meaningful period or needs more data.
+   * It also reflects whether the user agent can retrieve and buffer data in an
+   * energy-efficient manner while maintaining the desired memory usage.
+   * `true` indicates that the buffer is low, and more data should be buffered.
+   * `false` indicates that there is enough buffered data, and no additional data needs
+   *  to be buffered at this time.
+   */
+  canStream: boolean;
 }
 
 /**
@@ -128,6 +138,16 @@ export default function createCorePlaybackObserver(
       clearSignal: canceller.signal,
       emitCurrentValue: false,
     });
+
+    // TODO there might be subtle unexpected behavior here as listening to mediaSource
+    // event will send observation which may be outdated at the time it is sent
+    mediaSource?.addEventListener(
+      "streamingChanged",
+      () => {
+        emitCorePlaybackObservation();
+      },
+      canceller.signal,
+    );
     return newRef;
 
     function constructCorePlaybackObservation() {
@@ -149,6 +169,7 @@ export default function createCorePlaybackObserver(
         },
         readyState: observation.readyState,
         speed: lastSpeed,
+        canStream: mediaSource?.streaming ?? true,
       };
     }
 

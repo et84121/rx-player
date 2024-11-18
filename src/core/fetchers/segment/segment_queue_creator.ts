@@ -16,6 +16,7 @@
 
 import config from "../../../config";
 import type { ISegmentPipeline, ITransportPipelines } from "../../../transports";
+import type SharedReference from "../../../utils/reference";
 import type { CancellationSignal } from "../../../utils/task_canceller";
 import type CmcdDataBuilder from "../../cmcd";
 import type { IBufferType } from "../../segment_sinks";
@@ -89,6 +90,8 @@ export default class SegmentQueueCreator {
    * @param {string} bufferType - The type of buffer concerned (e.g. "audio",
    * "video", etc.)
    * @param {Object} eventListeners
+   * @param {Object} isMediaSegmentQueueInterrupted - Wheter the downloading of media
+   * segment should be interrupted or not.
    * @returns {Object} - `SegmentQueue`, which is an abstraction allowing to
    * perform a queue of segment requests for a given media type (here defined by
    * `bufferType`) with associated priorities.
@@ -96,6 +99,7 @@ export default class SegmentQueueCreator {
   public createSegmentQueue(
     bufferType: IBufferType,
     eventListeners: ISegmentFetcherLifecycleCallbacks,
+    isMediaSegmentQueueInterrupted: SharedReference<boolean>,
   ): SegmentQueue<unknown> {
     const requestOptions = getSegmentFetcherRequestOptions(this._backoffOptions);
     const pipelines = this._transport[bufferType];
@@ -113,7 +117,7 @@ export default class SegmentQueueCreator {
       this._prioritizer,
       segmentFetcher,
     );
-    return new SegmentQueue(prioritizedSegmentFetcher);
+    return new SegmentQueue(prioritizedSegmentFetcher, isMediaSegmentQueueInterrupted);
   }
 }
 

@@ -116,6 +116,22 @@ export default function AdaptationStream(
     adapStreamCanceller.signal,
   );
 
+  const isMediaSegmentQueueInterrupted = new SharedReference<boolean>(false);
+  /** Update the `canLoad` ref on observation update */
+  playbackObserver.listen(
+    (observation) => {
+      const observationCanStream = observation.canStream ?? true;
+      if (isMediaSegmentQueueInterrupted.getValue() === observationCanStream) {
+        log.debug(
+          "Stream: isMediaSegmentQueueInterrupted updated to",
+          !observationCanStream,
+        );
+        isMediaSegmentQueueInterrupted.setValue(!observationCanStream);
+      }
+    },
+    { clearSignal: adapStreamCanceller.signal },
+  );
+
   /** Allows a `RepresentationStream` to easily fetch media segments. */
   const segmentQueue = segmentQueueCreator.createSegmentQueue(
     adaptation.type,
@@ -126,6 +142,7 @@ export default function AdaptationStream(
       onProgress: abrCallbacks.requestProgress,
       onMetrics: abrCallbacks.metrics,
     },
+    isMediaSegmentQueueInterrupted,
   );
   /* eslint-enable @typescript-eslint/unbound-method */
 
