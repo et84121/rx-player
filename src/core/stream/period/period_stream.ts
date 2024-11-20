@@ -457,11 +457,9 @@ function createOrReuseSegmentSink(
   const segmentSinkStatus = segmentSinksStore.getStatus(bufferType);
   if (segmentSinkStatus.type === "initialized") {
     log.info("Stream: Reusing a previous SegmentSink for the type", bufferType);
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-return
     return segmentSinkStatus.value;
   }
   const codec = getFirstDeclaredMimeType(adaptation);
-  // eslint-disable-next-line @typescript-eslint/no-unsafe-return
   return segmentSinksStore.createSegmentSink(bufferType, codec);
 }
 

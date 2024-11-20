@@ -218,7 +218,6 @@ export default class SegmentSinksStore {
       return Promise.resolve();
     }
     return createCancellablePromise(cancelWaitSignal, (res) => {
-      // eslint-disable-next-line prefer-const
       let onAddedOrDisabled: () => void = noop;
 
       const removeCallback = () => {
