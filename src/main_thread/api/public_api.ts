@@ -1927,7 +1927,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     }
 
     let periodId: string | undefined;
-    let filterPlayableRepresentations: boolean;
+    let filterPlayableRepresentations = true;
     if (typeof arg === "string") {
       periodId = arg;
     } else {
@@ -1986,7 +1986,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     }
 
     let periodId: string | undefined;
-    let filterPlayableRepresentations: boolean;
+    let filterPlayableRepresentations = true;
     if (typeof arg === "string") {
       periodId = arg;
     } else {
@@ -2027,7 +2027,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     }
 
     let periodId: string | undefined;
-    let filterPlayableRepresentations: boolean;
+    let filterPlayableRepresentations = true;
     if (typeof arg === "string") {
       periodId = arg;
     } else {
@@ -2086,7 +2086,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     }
 
     let periodId: string | undefined;
-    let filterPlayableRepresentations: boolean;
+    let filterPlayableRepresentations = true;
     if (typeof arg === "string") {
       periodId = arg;
     } else {
