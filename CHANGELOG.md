@@ -1,6 +1,6 @@
 # Changelog
 
-## Current dev build: v4.3.0-dev.2024111800
+## Current dev build: v4.3.0-dev.2024112900
 
 ### Features
 
@@ -8,6 +8,7 @@
 
 ### Bug fixes
 
+- tracks API should not returned unplayable representations by default [#1599]
 - MULTI_THREAD: Fix `onmessageerror` being undefined on older devices [#1585]
 - Compat: On "FREEZING" try to un-freeze regardless of if the wanted position was reached
   to fix a remaining Tizen (Samsung) infinite rebuffering issue [#1586]
