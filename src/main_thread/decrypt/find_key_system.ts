@@ -32,7 +32,7 @@ import arrayIncludes from "../../utils/array_includes";
 import flatMap from "../../utils/flat_map";
 import isNullOrUndefined from "../../utils/is_null_or_undefined";
 import type { CancellationSignal } from "../../utils/task_canceller";
-import MediaKeysInfosStore from "./utils/media_keys_infos_store";
+import MediaKeysAttacher from "./utils/media_keys_attacher";
 
 type MediaKeysRequirement = "optional" | "required" | "not-allowed";
 
@@ -445,7 +445,7 @@ export default function getMediaKeySystemAccess(
 
     const chosenType = keySystemsType[index];
 
-    const currentState = MediaKeysInfosStore.getState(mediaElement);
+    const currentState = await MediaKeysAttacher.getAttachedMediaKeysState(mediaElement);
     if (currentState !== null) {
       if (eme.implementation === currentState.emeImplementation.implementation) {
         // Fast way to find a compatible keySystem if the currently loaded
