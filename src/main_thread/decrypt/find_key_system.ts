@@ -81,9 +81,9 @@ interface IKeySystemType {
    * system.
    */
   keyName: string | undefined;
-  /** keyType: keySystem type (e.g. "com.widevine.alpha") */
+  /** KeySystem type (e.g. "com.widevine.alpha") */
   keyType: string;
-  /** keySystem {Object}: the original keySystem object */
+  /** The original keySystem object */
   keySystemOptions: IKeySystemOption;
 }
 
@@ -403,14 +403,7 @@ export default function getMediaKeySystemAccess(
   cancelSignal: CancellationSignal,
 ): Promise<IFoundMediaKeySystemAccessEvent> {
   log.info("DRM: Searching for compatible MediaKeySystemAccess");
-  /**
-   * Array of set keySystems for this content.
-   * Each item of this array is an object containing the following keys:
-   *   - keyName {string}: keySystem canonical name (e.g. "widevine")
-   *   - keyType {string}: keySystem type (e.g. "com.widevine.alpha")
-   *   - keySystem {Object}: the original keySystem object
-   * @type {Array.<Object>}
-   */
+  /** Array of set keySystems for this content. */
   const keySystemsType: IKeySystemType[] = keySystemsConfigs.reduce(
     (arr: IKeySystemType[], keySystemOptions) => {
       const { EME_KEY_SYSTEMS } = config.getCurrent();
