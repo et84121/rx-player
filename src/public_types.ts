@@ -558,6 +558,51 @@ export interface IKeySystemOption {
    * `MediaKeySystemConfiguration` according to the EME API.
    */
   distinctiveIdentifier?: MediaKeysRequirement | undefined;
+
+  /**
+   * Force a `sessionTypes` value for the corresponding
+   * `MediaKeySystemConfiguration` asked when creating a
+   * `MediaKeySystemAccess` (the EME API concept).
+   *
+   * If not set, the RxPlayer will automatically ask for the most adapted
+   * `sessionTypes` based on your configuration for the current content. As
+   * such, this option is only needed for very specific usages.
+   *
+   * A case where you might want to set this value is if for example you want
+   * the ability to be able to load both temporary and persistent licenses,
+   * regardless of the configuration applied to the current content.
+   * Setting in that case `wantedSessionTypes` to
+   * `["temporary", "persistent-license"]` will lead, if compatible, to the
+   * creation of a `MediaKeySystemAccess` able to handle both:
+   *   - contents relying on temporary licenses, and:
+   *   - contents relying on persistent licenses
+   *
+   * The RxPlayer will then be able to keep that same `MediaKeySystemAccess` on
+   * future `loadVideo` calls as long as they rely on either all or a subset of
+   * those session types - and as long as the rest of the new wanted
+   * configuration is also considered compatible with that `MediaKeySystemAccess`.
+   *
+   * Moreover, because our `MediaKeySession` cache (see `maxSessionCacheSize`)
+   * is linked to a `MediaKeySystemAccess`, keeping the same one allows the
+   * RxPlayer to also keep the same cache (whereas changing
+   * `MediaKeySystemAccess` when changing contents resets that cache).
+   *
+   * Note that the current device has to be compatible to _ALL_ `sessionTypes`
+   * for that configuration to go through.
+   *
+   * Notes
+   * -----
+   *
+   * If this value is set to an array which does not contain
+   * `"persistent-license"`, we will assume that no persistent license will be
+   * requested for the current content, regardless of the
+   * `persistentLicenseConfig` option.
+   *
+   * If this value only contains `"persistent-license"` but the
+   * `persistentLicenseConfig` option is not set, we will load persistent
+   * licenses yet not persist them.
+   */
+  wantedSessionTypes?: string[] | undefined;
   /**
    * If true, all open `MediaKeySession` (JavaScript Objects linked to the keys
    * used to decrypt the content) will be closed when the current playback

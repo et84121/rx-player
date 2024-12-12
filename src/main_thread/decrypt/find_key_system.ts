@@ -184,13 +184,24 @@ function buildKeySystemConfigurations(
   keySystemTypeInfo: IKeySystemType,
 ): MediaKeySystemConfiguration[] {
   const { keyName, keyType, keySystemOptions: keySystem } = keySystemTypeInfo;
-  const sessionTypes = ["temporary"];
+  let sessionTypes: string[];
   let persistentState: MediaKeysRequirement = "optional";
   let distinctiveIdentifier: MediaKeysRequirement = "optional";
 
-  if (!isNullOrUndefined(keySystem.persistentLicenseConfig)) {
+  if (Array.isArray(keySystem.wantedSessionTypes)) {
+    sessionTypes = keySystem.wantedSessionTypes;
+    if (
+      arrayIncludes(keySystem.wantedSessionTypes, "persistent-license") &&
+      !isNullOrUndefined(keySystem.persistentLicenseConfig)
+    ) {
+      persistentState = "required";
+    }
+  } else if (!isNullOrUndefined(keySystem.persistentLicenseConfig)) {
     persistentState = "required";
-    sessionTypes.push("persistent-license");
+    // TODO: shouldn't it be just `["persistent-license"]` here?
+    sessionTypes = ["temporary", "persistent-license"];
+  } else {
+    sessionTypes = ["temporary"];
   }
 
   if (!isNullOrUndefined(keySystem.persistentState)) {
