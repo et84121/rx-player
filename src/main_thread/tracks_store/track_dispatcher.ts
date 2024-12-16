@@ -4,6 +4,7 @@ import type {
   ITrackSwitchingMode,
 } from "../../core/types";
 import type { IAdaptationMetadata, IRepresentationMetadata } from "../../manifest";
+import { isRepresentationPlayable } from "../../manifest";
 import type {
   IAudioRepresentationsSwitchingMode,
   IVideoRepresentationsSwitchingMode,
@@ -184,11 +185,7 @@ export default class TrackDispatcher extends EventEmitter<ITrackDispatcherEvent>
       if (repSettings === null) {
         // unlocking
         playableRepresentations = trackInfo.adaptation.representations.filter(
-          (representation) => {
-            return (
-              representation.isSupported === true && representation.decipherable !== false
-            );
-          },
+          (representation) => isRepresentationPlayable(representation) === true,
         );
 
         // No need to remove the previous content when unlocking
@@ -200,7 +197,7 @@ export default class TrackDispatcher extends EventEmitter<ITrackDispatcherEvent>
           arrayIncludes(representationIds, r.id),
         );
         playableRepresentations = representations.filter(
-          (r) => r.isSupported === true && r.decipherable !== false,
+          (representation) => isRepresentationPlayable(representation) === true,
         );
         if (playableRepresentations.length === 0) {
           self.trigger("noPlayableLockedRepresentation", null);
