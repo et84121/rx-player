@@ -414,7 +414,6 @@ export default class FreezeResolver {
           previousRepresentationEntry = segment;
           break;
         } else if (
-          currentSegment !== null &&
           segment.segment.start === currentSegment.start &&
           // Ignore history entry concerning the same segment more than 3
           // seconds of playback behind - we don't want to compare things
