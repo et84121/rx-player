@@ -296,7 +296,8 @@ export default class FreezeResolver {
 
     const hasDecipherabilityFreezePotential =
       (rebufferingForTooLong || frozenForTooLong) &&
-      ((bufferGap < 6 && !fullyLoaded) || readyState > 1);
+      (bufferGap >= 6 || fullyLoaded) &&
+      readyState <= 1;
 
     if (!hasDecipherabilityFreezePotential) {
       this._decipherabilityFreezeStartingTimestamp = null;
