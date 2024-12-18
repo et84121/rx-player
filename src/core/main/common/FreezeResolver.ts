@@ -28,6 +28,16 @@ import type { IBufferedChunk } from "../../segment_sinks";
 const MINIMUM_BUFFER_GAP_AT_READY_STATE_1_BEFORE_FREEZING = 6;
 
 /**
+ * The amount of milliseconds since a freeze was detected from which we consider
+ * that the freeze should be worked around: either by flushing buffers,
+ * reloading, or any other kind of strategies.
+ *
+ * Before that delay, will continue to wait to see if the browser succeeds to
+ * un-freeze by itself.
+ */
+const FREEZING_FOR_TOO_LONG_DELAY = 4000;
+
+/**
  * To avoid handling freezes (e.g. "reloading" or "seeking") in a loop when
  * things go wrong, we have a security delay in milliseconds, this
  * `MINIMUM_TIME_BETWEEN_FREEZE_HANDLING` constant, which we'll await between
@@ -291,12 +301,13 @@ export default class FreezeResolver {
     const { readyState, rebuffering, freezing, fullyLoaded } = observation;
     const bufferGap = normalizeBufferGap(observation.bufferGap);
     const rebufferingForTooLong =
-      rebuffering !== null && now - rebuffering.timestamp > 4000;
-    const frozenForTooLong = freezing !== null && now - freezing.timestamp > 4000;
+      rebuffering !== null && now - rebuffering.timestamp > FREEZING_FOR_TOO_LONG_DELAY;
+    const frozenForTooLong =
+      freezing !== null && now - freezing.timestamp > FREEZING_FOR_TOO_LONG_DELAY;
 
     const hasDecipherabilityFreezePotential =
       (rebufferingForTooLong || frozenForTooLong) &&
-      (bufferGap >= 6 || fullyLoaded) &&
+      (bufferGap >= MINIMUM_BUFFER_GAP_AT_READY_STATE_1_BEFORE_FREEZING || fullyLoaded) &&
       readyState <= 1;
 
     if (!hasDecipherabilityFreezePotential) {
@@ -308,7 +319,8 @@ export default class FreezeResolver {
 
     const shouldHandleDecipherabilityFreeze =
       this._decipherabilityFreezeStartingTimestamp !== null &&
-      getMonotonicTimeStamp() - this._decipherabilityFreezeStartingTimestamp > 4000;
+      getMonotonicTimeStamp() - this._decipherabilityFreezeStartingTimestamp >
+        FREEZING_FOR_TOO_LONG_DELAY;
 
     let hasOnlyDecipherableSegments = true;
     let isClear = true;
