@@ -74,6 +74,7 @@ export default function launchStaticServer(path, config) {
     httpServer.listen(config.httpPort, onHttpConnection);
 
     if (!shouldStartHttps) {
+      httpsServerStatus = "disabled";
       return;
     }
 
@@ -124,7 +125,7 @@ export default function launchStaticServer(path, config) {
         httpServerStatus = "error";
         if (httpsServerStatus === "success") {
           res({ http: false, https: true });
-        } else if (httpsServerStatus === "error") {
+        } else if (httpsServerStatus === "error" || httpsServerStatus === "disabled") {
           rej(err);
         }
         httpServer.close();
