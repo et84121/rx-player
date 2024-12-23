@@ -150,6 +150,7 @@ describe("find_key_systems - ", () => {
   it("should create a media key the first time and then reuse the previous one if it's the same configuration", async () => {
     requestMediaKeySystemAccessMock.mockImplementation(() => {
       return {
+        keySystem: "com.widevine.alpha",
         createMediaKeys: () => ({
           createSession: () => ({
             // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -200,6 +201,7 @@ describe("find_key_systems - ", () => {
   it("should create a media key the first time and then create another one if the previous is not compatible.", async () => {
     requestMediaKeySystemAccessMock.mockImplementation(() => {
       return {
+        keySystem: "com.widevine.alpha",
         createMediaKeys: () => ({
           createSession: () => ({
             // eslint-disable-next-line @typescript-eslint/no-empty-function
@@ -258,6 +260,7 @@ describe("find_key_systems - ", () => {
   it("should create a media key the first time and then reuse the previous one if it's a different configuration but it's a compatible configuration.", async () => {
     requestMediaKeySystemAccessMock.mockImplementation(() => {
       return {
+        keySystem: "com.widevine.alpha",
         createMediaKeys: () => ({
           createSession: () => ({
             // eslint-disable-next-line @typescript-eslint/no-empty-function
