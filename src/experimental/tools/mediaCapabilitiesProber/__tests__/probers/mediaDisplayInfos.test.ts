@@ -15,7 +15,7 @@ describe("MediaCapabilitiesProber probers probeMediaDisplayInfos", () => {
       await vi.importActual("../../probers/mediaDisplayInfos")
     ).default as typeof IProbeMediaDisplayInfos;
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    expect(probeMediaDisplayInfos({})).rejects.toThrowError(
+    await expect(probeMediaDisplayInfos({})).rejects.toThrowError(
       "MediaCapabilitiesProber >>> API_CALL: matchMedia not available",
     );
     (

@@ -14,7 +14,7 @@ describe("MediaCapabilitiesProber probers - HDCPPolicy", () => {
     const probeHDCPPolicy = (await vi.importActual("../../probers/HDCPPolicy"))
       .default as typeof IProbeHDCPPolicy;
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    expect(probeHDCPPolicy({})).rejects.toEqual(
+    await expect(probeHDCPPolicy({})).rejects.toEqual(
       "MediaCapabilitiesProber >>> API_CALL: API not available",
     );
   });
@@ -33,7 +33,7 @@ describe("MediaCapabilitiesProber probers - HDCPPolicy", () => {
     const probeHDCPPolicy = (await vi.importActual("../../probers/HDCPPolicy"))
       .default as typeof IProbeHDCPPolicy;
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    expect(probeHDCPPolicy({})).rejects.toEqual(
+    await expect(probeHDCPPolicy({})).rejects.toEqual(
       "MediaCapabilitiesProber >>> API_CALL: " +
         "Missing policy argument for calling getStatusForPolicy.",
     );

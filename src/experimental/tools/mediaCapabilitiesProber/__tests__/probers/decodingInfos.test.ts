@@ -162,17 +162,17 @@ describe("MediaCapabilitiesProber probers - decodingInfo", () => {
       });
   });
 
-  it("should throw if API mediaCapabilities not available", () => {
+  it("should throw if API mediaCapabilities not available", async () => {
     // @ts-expect-error: `navigator.mediaCapabilities` is read-only normally, for
     // now, we're going through JSDom through so that's OK.
     delete navigator.mediaCapabilities;
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    expect(probeDecodingInfos({})).rejects.toThrowError(
+    await expect(probeDecodingInfos({})).rejects.toThrowError(
       "MediaCapabilitiesProber >>> API_CALL: MediaCapabilities API not available",
     );
   });
 
-  it("should throw if API decodingInfo not available", () => {
+  it("should throw if API decodingInfo not available", async () => {
     if (!isNullOrUndefined(navigator.mediaCapabilities)) {
       // @ts-expect-error: `navigator.mediaCapabilities` is read-only normally, for
       // now, we're going through JSDom through so that's OK.
@@ -183,7 +183,7 @@ describe("MediaCapabilitiesProber probers - decodingInfo", () => {
       navigator.mediaCapabilities = {};
     }
     // eslint-disable-next-line @typescript-eslint/no-floating-promises
-    expect(probeDecodingInfos({})).rejects.toThrowError(
+    await expect(probeDecodingInfos({})).rejects.toThrowError(
       "MediaCapabilitiesProber >>> API_CALL: Decoding Info not available",
     );
   });
