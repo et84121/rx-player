@@ -270,8 +270,20 @@ export interface IMediaElement extends IEventTarget<IMediaElementEventMap> {
   oncanplay: ((evt: Event) => void) | null;
   oncanplaythrough: ((evt: Event) => void) | null;
   onended: ((evt: Event) => void) | null;
-  onenterpictureinpicture?: ((evt: Event) => void) | null;
-  onleavepictureinpicture?: ((evt: Event) => void) | null;
+  onenterpictureinpicture?:
+    | ((
+        evt: Event & {
+          pictureInPictureWindow: ICompatPictureInPictureWindow;
+        },
+      ) => void)
+    | null;
+  onleavepictureinpicture?:
+    | ((
+        evt: Event & {
+          pictureInPictureWindow: ICompatPictureInPictureWindow;
+        },
+      ) => void)
+    | null;
   onerror: ((evt: Event) => void) | null;
   onloadeddata: ((evt: Event) => void) | null;
   onloadedmetadata: ((evt: Event) => void) | null;
@@ -402,6 +414,7 @@ interface ICompatVideoTrack {
 export interface ICompatPictureInPictureWindow extends EventTarget {
   width: number;
   height: number;
+  onresize: ((evt: Event) => void) | null;
 }
 
 /* eslint-disable */
