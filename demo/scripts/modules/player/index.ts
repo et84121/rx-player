@@ -304,22 +304,10 @@ const PlayerModule = declareModule(
         player.play().catch(() => {
           // ignored
         });
-
-        const isStopped = state.get("isStopped");
-        const hasEnded = state.get("hasEnded");
-        if (!isStopped && !hasEnded) {
-          state.update("isPaused", false);
-        }
       },
 
       pause() {
         player.pause();
-
-        const isStopped = state.get("isStopped");
-        const hasEnded = state.get("hasEnded");
-        if (!isStopped && !hasEnded) {
-          state.update("isPaused", true);
-        }
       },
 
       stop() {
