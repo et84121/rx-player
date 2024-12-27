@@ -253,7 +253,7 @@ function ContentList({
   loadVideo: (opts: ILoadVideoOptions) => void;
   showOptions: boolean;
   onOptionToggle: () => void;
-}): JSX.Element {
+}): React.JSX.Element {
   const initialContents = React.useMemo(() => {
     return constructContentList();
   }, []);

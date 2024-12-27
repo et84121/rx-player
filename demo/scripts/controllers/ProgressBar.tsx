@@ -13,7 +13,7 @@ function ProgressBar({
   player: IPlayerModule;
   enableVideoThumbnails: boolean;
   onSeek: () => void;
-}): JSX.Element {
+}): React.JSX.Element {
   const bufferGap = useModuleState(player, "bufferGap");
   const currentTime = useModuleState(player, "currentTime");
   const isContentLoaded = useModuleState(player, "isContentLoaded");
@@ -124,7 +124,7 @@ function ProgressBar({
     );
   }
 
-  let thumbnailElement: JSX.Element | null = null;
+  let thumbnailElement: React.JSX.Element | null = null;
   if (thumbnailIsVisible) {
     const xThumbnailPosition = tipPosition - toolTipOffset;
     if (enableVideoThumbnails && imageTime !== null) {

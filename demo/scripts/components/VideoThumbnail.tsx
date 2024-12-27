@@ -26,7 +26,7 @@ export default function VideoThumbnail({
   player: IPlayerModule;
   xPosition: number | null;
   time: number;
-}): JSX.Element {
+}): React.JSX.Element {
   const videoThumbnailLoader = useModuleState(player, "videoThumbnailLoader");
   const videoElement = useModuleState(player, "videoThumbnailsElement");
 
