@@ -8,5 +8,5 @@ const BASE_URL =
   "/imagetracks/";
 
 export default {
-  url: BASE_URL + "example.bif",
+  url: BASE_URL + "image.bif",
 };
