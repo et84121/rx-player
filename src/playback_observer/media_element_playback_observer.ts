@@ -837,7 +837,7 @@ function getFreezingStatus(
   bufferGap: number | undefined,
 ): IFreezingStatus | null {
   const { MINIMUM_BUFFER_AMOUNT_BEFORE_FREEZING } = config.getCurrent();
-  if (prevObservation.freezing) {
+  if (prevObservation.freezing !== null) {
     if (
       currentInfo.ended ||
       currentInfo.paused ||

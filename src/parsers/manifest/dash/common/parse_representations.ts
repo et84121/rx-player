@@ -94,7 +94,7 @@ function getHDRInformation({
         return { eotf: "hlg" };
     }
   }
-  if (codecs !== undefined && /^vp(08|09|10)/.exec(codecs)) {
+  if (codecs !== undefined && /^vp(08|09|10)/.test(codecs)) {
     return getWEBMHDRInformation(codecs);
   }
 }
@@ -205,7 +205,7 @@ export default function parseRepresentations(
         (r) =>
           r.schemeIdUri === "tag:dolby.com,2018:dash:EC3_ExtensionType:2018" &&
           r.value === "JOC",
-      )
+      ) !== undefined
     ) {
       parsedRepresentation.isSpatialAudio = true;
     }

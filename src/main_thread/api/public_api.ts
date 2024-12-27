@@ -1335,7 +1335,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
    * `false` otherwise.
    */
   isPaused(): boolean {
-    if (this.videoElement) {
+    if (this.videoElement !== null) {
       if (arrayIncludes(["LOADING", "RELOADING"], this.state)) {
         return !this._priv_lastAutoPlay;
       } else {
@@ -2778,7 +2778,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     // Emit initial events for the Period
     if (!isNullOrUndefined(tracksStore)) {
       const periodRef = tracksStore.getPeriodObjectFromPeriod(period);
-      if (periodRef) {
+      if (periodRef !== undefined) {
         const audioTrack = tracksStore.getChosenAudioTrack(periodRef, true);
         this._priv_triggerEventIfNotStopped("audioTrackChange", audioTrack, cancelSignal);
         const textTrack = tracksStore.getChosenTextTrack(periodRef);
