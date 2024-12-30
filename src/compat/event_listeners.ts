@@ -176,16 +176,14 @@ function createCompatibleEventListener(
         (element as IEventEmitterLike).addEventListener(eventName, listener);
       } else {
         hasSetOnFn = true;
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-        (element as any)["on" + eventName] = listener;
+        element[("on" + eventName) as keyof IEventTargetLike] = listener;
       }
       cancelSignal.register(() => {
         if (typeof element.removeEventListener === "function") {
           (element as IEventEmitterLike).removeEventListener(eventName, listener);
         }
         if (hasSetOnFn) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
-          delete (element as any)["on" + eventName];
+          delete element[("on" + eventName) as keyof IEventTargetLike];
         }
       });
     });

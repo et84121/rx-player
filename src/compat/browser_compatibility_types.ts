@@ -417,9 +417,14 @@ export interface ICompatPictureInPictureWindow extends EventTarget {
   onresize: ((evt: Event) => void) | null;
 }
 
-/* eslint-disable */
 /** MediaSource implementation, including vendored implementations. */
-const gs = globalScope as any;
+const gs = globalScope as typeof window & {
+  MozMediaSource?: typeof MediaSource | undefined | null;
+  WebKitMediaSource?: typeof MediaSource | undefined | null;
+  MSMediaSource?: typeof MediaSource | undefined | null;
+  ManagedMediaSource?: typeof MediaSource | undefined | null;
+};
+
 const MediaSource_:
   | { new (): IMediaSource; isTypeSupported(type: string): boolean }
   | undefined =

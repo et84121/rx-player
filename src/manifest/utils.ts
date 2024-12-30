@@ -577,7 +577,8 @@ export function replicateUpdatesOnManifestMetadata(
 ) {
   for (const prop of Object.keys(newManifest)) {
     if (prop !== "periods") {
-      // eslint-disable-next-line
+      // trust me bro
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
       (baseManifest as any)[prop] = (newManifest as any)[prop];
     }
   }
@@ -598,7 +599,8 @@ export function replicateUpdatesOnManifestMetadata(
         const basePeriod = baseManifest.periods[periodIdx];
         for (const prop of Object.keys(newPeriod)) {
           if (prop !== "adaptations") {
-            // eslint-disable-next-line
+            // trust me bro
+            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-member-access
             (basePeriod as any)[prop] = (newPeriod as any)[prop];
           }
         }
