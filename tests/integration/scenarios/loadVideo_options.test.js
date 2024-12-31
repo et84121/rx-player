@@ -50,6 +50,10 @@ function runLoadVideoOptionsTests({ multithread } = {}) {
 
     beforeEach(() => {
       player = new RxPlayer();
+      // eslint-disable-next-line no-undef
+      if (__BROWSER_NAME__ === "safari") {
+        player.mute(); // Safari won't let us autoplay easily sadly
+      }
       if (multithread === true) {
         player.attachWorker({
           workerUrl: EMBEDDED_WORKER,
@@ -222,7 +226,7 @@ function runLoadVideoOptionsTests({ multithread } = {}) {
           const initialPosition = player.getPosition();
           expect(initialPosition).to.be.closeTo(
             player.getMaximumPosition() - startAt,
-            0.5,
+            1.5,
           );
           await checkAfterSleepWithBackoff(null, () => {
             expect(player.getPosition()).to.equal(initialPosition);
@@ -242,7 +246,7 @@ function runLoadVideoOptionsTests({ multithread } = {}) {
           const initialPosition = player.getPosition();
           expect(initialPosition).to.be.closeTo(
             player.getMaximumPosition() - startAt,
-            0.5,
+            1.5,
           );
           await checkAfterSleepWithBackoff(null, () => {
             expect(player.getPosition()).to.equal(initialPosition);

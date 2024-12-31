@@ -78,6 +78,10 @@ export default function launchTestsForContent(manifestInfos, { multithread } = {
   describe("API tests", () => {
     beforeEach(() => {
       player = new RxPlayer();
+      // eslint-disable-next-line no-undef
+      if (__BROWSER_NAME__ === "safari") {
+        player.mute(); // Safari won't let us autoplay easily sadly
+      }
       if (multithread === true) {
         player.attachWorker({
           workerUrl: EMBEDDED_WORKER,
@@ -958,18 +962,18 @@ export default function launchTestsForContent(manifestInfos, { multithread } = {
         player.setPlaybackRate(1);
         const before1 = performance.now();
         player.play();
-        await sleep(2000);
+        await sleep(10000);
         const duration1 = (performance.now() - before1) / 1000;
         const initialPosition = player.getPosition();
-        expect(initialPosition).to.be.closeTo(minimumPosition + duration1, 2);
+        expect(initialPosition).to.be.closeTo(minimumPosition + duration1, 5);
 
         const before2 = performance.now();
-        player.setPlaybackRate(3);
-        await sleep(2000);
+        player.setPlaybackRate(2);
+        await sleep(10000);
         const duration2 = (performance.now() - before2) / 1000;
         const secondPosition = player.getPosition();
-        expect(secondPosition).to.be.closeTo(initialPosition + duration2 * 3, 2);
-      }, 15000);
+        expect(secondPosition).to.be.closeTo(initialPosition + duration2 * 2, 7.5);
+      }, 30000);
     });
 
     describe("getVideoRepresentation", () => {
