@@ -61,15 +61,6 @@ function getBrowserConfig(browser) {
         },
       };
 
-    case "safari":
-      return {
-        enabled: true,
-        name: "safari",
-        headless: false,
-        provider: "webdriverio",
-        screenshotFailures: false,
-      };
-
     default:
       return {
         enabled: false,
