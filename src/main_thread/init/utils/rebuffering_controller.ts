@@ -315,7 +315,7 @@ export default class RebufferingController extends EventEmitter<IRebufferingCont
     }
     const observation = this._playbackObserver.getReference().getValue();
     if (
-      !observation.rebuffering ||
+      observation.rebuffering === null ||
       observation.paused ||
       this._speed.getValue() <= 0 ||
       (bufferType !== "audio" && bufferType !== "video")

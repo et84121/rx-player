@@ -191,7 +191,20 @@ module.exports = {
     ],
     "@typescript-eslint/no-shadow": ["error"],
     "@typescript-eslint/restrict-plus-operands": "error",
-    "@typescript-eslint/strict-boolean-expressions": "error",
+    "@typescript-eslint/strict-boolean-expressions": [
+      "error",
+      {
+        allowAny: false,
+        allowNullableBoolean: false,
+        allowNullableEnum: false,
+        allowNullableNumber: false,
+        allowNullableObject: false,
+        allowNullableString: false,
+        allowNumber: false,
+        allowRuleToRunWithoutStrictNullChecksIKnowWhatIAmDoing: false,
+        allowString: false,
+      },
+    ],
     "@typescript-eslint/triple-slash-reference": [
       "error",
       {
