@@ -97,7 +97,7 @@ export default defineConfig({
       // memory tests
       "tests/memory/**/*.[jt]s?(x)",
     ],
-    globalSetup: "tests/contents/server.mjs",
+    globalSetup: "tests/globalSetup.mjs",
     browser: getBrowserConfig(process.env.BROWSER_CONFIG ?? "chrome"),
   },
 });
