@@ -90,9 +90,14 @@ export default defineConfig({
     watch: false,
     globals: false,
     reporters: "dot",
-    include: ["tests/**/*.[jt]s?(x)"],
-    exclude: ["tests/performance/**/*.[jt]s?(x)"],
+    include: [
+      // integration tests
+      "tests/integration/scenarios/**/*.[jt]s?(x)",
+      "tests/integration/**/*.test.[jt]s?(x)",
+      // memory tests
+      "tests/memory/**/*.[jt]s?(x)",
+    ],
     globalSetup: "tests/contents/server.mjs",
-    browser: getBrowserConfig(process.env.BROWSER_CONFIG),
+    browser: getBrowserConfig(process.env.BROWSER_CONFIG ?? "chrome"),
   },
 });
