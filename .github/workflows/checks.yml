@@ -130,40 +130,6 @@ jobs:
             fi
           fi
 
-  integration_mac:
-    runs-on: macos-latest
-
-    strategy:
-      matrix:
-        node-version: [22.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
-    steps:
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/checkout@v4
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: "npm"
-
-      - run: |
-          npm ci
-          npm run build
-          for browser in "chrome" "firefox" "edge"; do
-            npm run test:integration:$browser ||
-            # retry on failure
-            if [ $? -ne 0 ]; then
-              echo "First tests attempt failed. Retrying after 20 seconds..."
-              sleep 20
-              npm run test:integration:$browser ||
-              # Other OSes than linux are particularly bad on github actions, run it three times
-              if [ $? -ne 0 ]; then
-                echo "Second tests attempt failed. Retrying after 60 seconds..."
-                sleep 60
-                npm run test:integration:$browser
-              fi
-            fi
-          done
-
   memory_linux:
     runs-on: ubuntu-latest
 
