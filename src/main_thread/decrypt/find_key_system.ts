@@ -198,8 +198,7 @@ function buildKeySystemConfigurations(
     }
   } else if (!isNullOrUndefined(keySystem.persistentLicenseConfig)) {
     persistentState = "required";
-    // TODO: shouldn't it be just `["persistent-license"]` here?
-    sessionTypes = ["temporary", "persistent-license"];
+    sessionTypes = ["persistent-license"];
   } else {
     sessionTypes = ["temporary"];
   }
