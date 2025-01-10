@@ -367,6 +367,108 @@ describe("decrypt - global tests - media key system access", () => {
     );
   });
 
+  it("should want only persistent sessions if wantedSessionTypes is set to `['persistent-license']`", async () => {
+    const mockRequestMediaKeySystemAccess = vi
+      .fn()
+      .mockImplementation(() => Promise.reject("nope"));
+    mockCompat({
+      requestMediaKeySystemAccess: mockRequestMediaKeySystemAccess,
+    });
+    await checkIncompatibleKeySystemsErrorMessage([
+      {
+        type: "foo",
+        getLicense: neverCalledFn,
+        wantedSessionTypes: ["persistent-license"],
+      },
+    ]);
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenCalledTimes(2);
+
+    const expectedConfig: MediaKeySystemConfiguration[] = defaultKSConfig.map((conf) => {
+      return {
+        ...conf,
+        sessionTypes: ["persistent-license"],
+      };
+    });
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      1,
+      "foo",
+      expectedConfig,
+    );
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      2,
+      "foo",
+      removeCapabiltiesFromConfig(expectedConfig),
+    );
+  });
+
+  it("should want only temporary sessions if wantedSessionTypes is set to `['temporary']`", async () => {
+    const mockRequestMediaKeySystemAccess = vi
+      .fn()
+      .mockImplementation(() => Promise.reject("nope"));
+    mockCompat({
+      requestMediaKeySystemAccess: mockRequestMediaKeySystemAccess,
+    });
+    await checkIncompatibleKeySystemsErrorMessage([
+      {
+        type: "foo",
+        getLicense: neverCalledFn,
+        wantedSessionTypes: ["temporary"],
+      },
+    ]);
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenCalledTimes(2);
+
+    const expectedConfig: MediaKeySystemConfiguration[] = defaultKSConfig.map((conf) => {
+      return {
+        ...conf,
+        sessionTypes: ["temporary"],
+      };
+    });
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      1,
+      "foo",
+      expectedConfig,
+    );
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      2,
+      "foo",
+      removeCapabiltiesFromConfig(expectedConfig),
+    );
+  });
+
+  it("should want both temporary and persistent sessions if wantedSessionTypes is set to `['persistent-license', 'temporary']`", async () => {
+    const mockRequestMediaKeySystemAccess = vi
+      .fn()
+      .mockImplementation(() => Promise.reject("nope"));
+    mockCompat({
+      requestMediaKeySystemAccess: mockRequestMediaKeySystemAccess,
+    });
+    await checkIncompatibleKeySystemsErrorMessage([
+      {
+        type: "foo",
+        getLicense: neverCalledFn,
+        wantedSessionTypes: ["persistent-license", "temporary"],
+      },
+    ]);
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenCalledTimes(2);
+
+    const expectedConfig: MediaKeySystemConfiguration[] = defaultKSConfig.map((conf) => {
+      return {
+        ...conf,
+        sessionTypes: ["persistent-license", "temporary"],
+      };
+    });
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      1,
+      "foo",
+      expectedConfig,
+    );
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      2,
+      "foo",
+      removeCapabiltiesFromConfig(expectedConfig),
+    );
+  });
+
   it("should want persistent sessions if persistentLicenseConfig is set", async () => {
     const mockRequestMediaKeySystemAccess = vi
       .fn()
@@ -384,6 +486,137 @@ describe("decrypt - global tests - media key system access", () => {
     };
     await checkIncompatibleKeySystemsErrorMessage([
       { type: "foo", getLicense: neverCalledFn, persistentLicenseConfig },
+    ]);
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenCalledTimes(2);
+
+    const expectedConfig: MediaKeySystemConfiguration[] = defaultKSConfig.map((conf) => {
+      return {
+        ...conf,
+        persistentState: "required",
+        sessionTypes: ["persistent-license"],
+      };
+    });
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      1,
+      "foo",
+      expectedConfig,
+    );
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      2,
+      "foo",
+      removeCapabiltiesFromConfig(expectedConfig),
+    );
+  });
+
+  it("should not want persistent sessions if persistentLicenseConfig is set but wantedSessionTypes only wants temporary licenses", async () => {
+    const mockRequestMediaKeySystemAccess = vi
+      .fn()
+      .mockImplementation(() => Promise.reject("nope"));
+    mockCompat({
+      requestMediaKeySystemAccess: mockRequestMediaKeySystemAccess,
+    });
+    const persistentLicenseConfig = {
+      save() {
+        throw new Error("Should not save.");
+      },
+      load() {
+        throw new Error("Should not load.");
+      },
+    };
+    await checkIncompatibleKeySystemsErrorMessage([
+      {
+        type: "foo",
+        getLicense: neverCalledFn,
+        wantedSessionTypes: ["temporary"],
+        persistentLicenseConfig,
+      },
+    ]);
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenCalledTimes(2);
+
+    const expectedConfig: MediaKeySystemConfiguration[] = defaultKSConfig.map((conf) => {
+      return {
+        ...conf,
+        sessionTypes: ["temporary"],
+      };
+    });
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      1,
+      "foo",
+      expectedConfig,
+    );
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      2,
+      "foo",
+      removeCapabiltiesFromConfig(expectedConfig),
+    );
+  });
+
+  it("should properly handle persistentLicenseConfig and wantedSessionTypes set to persistent-license", async () => {
+    const mockRequestMediaKeySystemAccess = vi
+      .fn()
+      .mockImplementation(() => Promise.reject("nope"));
+    mockCompat({
+      requestMediaKeySystemAccess: mockRequestMediaKeySystemAccess,
+    });
+    const persistentLicenseConfig = {
+      save() {
+        throw new Error("Should not save.");
+      },
+      load() {
+        throw new Error("Should not load.");
+      },
+    };
+    await checkIncompatibleKeySystemsErrorMessage([
+      {
+        type: "foo",
+        getLicense: neverCalledFn,
+        wantedSessionTypes: ["persistent-license"],
+        persistentLicenseConfig,
+      },
+    ]);
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenCalledTimes(2);
+
+    const expectedConfig: MediaKeySystemConfiguration[] = defaultKSConfig.map((conf) => {
+      return {
+        ...conf,
+        persistentState: "required",
+        sessionTypes: ["persistent-license"],
+      };
+    });
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      1,
+      "foo",
+      expectedConfig,
+    );
+    expect(mockRequestMediaKeySystemAccess).toHaveBeenNthCalledWith(
+      2,
+      "foo",
+      removeCapabiltiesFromConfig(expectedConfig),
+    );
+  });
+
+  it("should properly handle persistentLicenseConfig and wantedSessionTypes set to both temporary and persistent-license", async () => {
+    const mockRequestMediaKeySystemAccess = vi
+      .fn()
+      .mockImplementation(() => Promise.reject("nope"));
+    mockCompat({
+      requestMediaKeySystemAccess: mockRequestMediaKeySystemAccess,
+    });
+    const persistentLicenseConfig = {
+      save() {
+        throw new Error("Should not save.");
+      },
+      load() {
+        throw new Error("Should not load.");
+      },
+    };
+    await checkIncompatibleKeySystemsErrorMessage([
+      {
+        type: "foo",
+        getLicense: neverCalledFn,
+        wantedSessionTypes: ["temporary", "persistent-license"],
+        persistentLicenseConfig,
+      },
     ]);
     expect(mockRequestMediaKeySystemAccess).toHaveBeenCalledTimes(2);
 
@@ -680,7 +913,7 @@ describe("decrypt - global tests - media key system access", () => {
         return {
           ...conf,
           persistentState: "required",
-          sessionTypes: ["temporary", "persistent-license"],
+          sessionTypes: ["persistent-license"],
         };
       });
     const expectedPersistentConfig: MediaKeySystemConfiguration[] = defaultKSConfig.map(
@@ -688,7 +921,7 @@ describe("decrypt - global tests - media key system access", () => {
         return {
           ...conf,
           persistentState: "required",
-          sessionTypes: ["temporary", "persistent-license"],
+          sessionTypes: ["persistent-license"],
         };
       },
     );
@@ -786,7 +1019,7 @@ describe("decrypt - global tests - media key system access", () => {
         return {
           ...conf,
           persistentState: "required",
-          sessionTypes: ["temporary", "persistent-license"],
+          sessionTypes: ["persistent-license"],
         };
       });
     expect(mockRequestMediaKeySystemAccess).toHaveBeenCalledTimes(2);
@@ -833,7 +1066,7 @@ describe("decrypt - global tests - media key system access", () => {
         return {
           ...conf,
           persistentState: "required",
-          sessionTypes: ["temporary", "persistent-license"],
+          sessionTypes: ["persistent-license"],
         };
       },
     );
@@ -842,7 +1075,7 @@ describe("decrypt - global tests - media key system access", () => {
         return {
           ...conf,
           persistentState: "required",
-          sessionTypes: ["temporary", "persistent-license"],
+          sessionTypes: ["persistent-license"],
         };
       });
     const expectedIdentifierConfig: MediaKeySystemConfiguration[] = defaultKSConfig.map(
@@ -939,7 +1172,7 @@ describe("decrypt - global tests - media key system access", () => {
         return {
           ...conf,
           persistentState: "required",
-          sessionTypes: ["temporary", "persistent-license"],
+          sessionTypes: ["persistent-license"],
         };
       });
     expect(mockRequestMediaKeySystemAccess).toHaveBeenCalledTimes(2);

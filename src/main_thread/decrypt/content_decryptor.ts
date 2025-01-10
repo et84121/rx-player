@@ -530,13 +530,14 @@ export default class ContentDecryptor extends EventEmitter<IContentDecryptorEven
     this._lockInitDataQueue();
 
     let wantedSessionType: MediaKeySessionType;
-    if (isNullOrUndefined(options.persistentLicenseConfig)) {
-      wantedSessionType = "temporary";
-    } else if (!canCreatePersistentSession(mediaKeySystemAccess)) {
-      log.warn('DRM: Cannot create "persistent-license" session: not supported');
-      wantedSessionType = "temporary";
-    } else {
+    if (
+      canCreatePersistentSession(mediaKeySystemAccess) &&
+      (!isNullOrUndefined(options.persistentLicenseConfig) ||
+        !canCreateTemporarySession(mediaKeySystemAccess))
+    ) {
       wantedSessionType = "persistent-license";
+    } else {
+      wantedSessionType = "temporary";
     }
 
     const {
@@ -995,6 +996,19 @@ function canCreatePersistentSession(
 ): boolean {
   const { sessionTypes } = mediaKeySystemAccess.getConfiguration();
   return sessionTypes !== undefined && arrayIncludes(sessionTypes, "persistent-license");
+}
+
+/**
+ * Returns `true` if the given MediaKeySystemAccess can create
+ * "temporary" MediaKeySessions.
+ * @param {MediaKeySystemAccess} mediaKeySystemAccess
+ * @returns {Boolean}
+ */
+function canCreateTemporarySession(
+  mediaKeySystemAccess: MediaKeySystemAccess | ICustomMediaKeySystemAccess,
+): boolean {
+  const { sessionTypes } = mediaKeySystemAccess.getConfiguration();
+  return sessionTypes !== undefined && arrayIncludes(sessionTypes, "temporary");
 }
 
 /**

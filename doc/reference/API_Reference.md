@@ -108,6 +108,11 @@ events and so on.
     [`videoCapabilities`](https://www.w3.org/TR/encrypted-media/#dom-mediakeysystemconfiguration-videocapabilities)
     property.
 
+  - [`keySystems[].wantedSessionTypes`](../api/Decryption_Options.md#wantedsessiontypes):
+    Allows the configuration of the
+    [`sessionTypes`](https://www.w3.org/TR/encrypted-media/#dom-mediakeysystemconfiguration-sessionTypes)
+    property.
+
 - [`autoPlay`](../api/Loading_a_Content.md#autoplay): Allows to automatically play after a
   content is loaded.
 
