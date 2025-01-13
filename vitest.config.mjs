@@ -1,22 +1,4 @@
 import { defineConfig } from "vitest/config";
-import { promises as fs } from "fs";
-
-// https://github.com/tachibana-shin/vite-plugin-arraybuffer/blob/main/src/main.ts
-function vitePluginArraybuffer() {
-  return {
-    name: "array-buffer-loader",
-    async load(id) {
-      if (id.endsWith("?arraybuffer")) {
-        const filePath = id.replace(/\?arraybuffer$/, "");
-        const fileBuffer = await fs.readFile(filePath);
-        return {
-          code: `export default new Uint8Array([${new Uint8Array(fileBuffer).join(",")}]).buffer`,
-          map: { mappings: "" },
-        };
-      }
-    },
-  };
-}
 
 function getBrowserConfig(browser) {
   switch (browser) {
@@ -69,7 +51,6 @@ function getBrowserConfig(browser) {
 }
 
 export default defineConfig({
-  plugins: [vitePluginArraybuffer()],
   define: {
     // global variables
     __TEST_CONTENT_SERVER__: {
