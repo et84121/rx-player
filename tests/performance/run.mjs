@@ -10,7 +10,7 @@ import { fileURLToPath } from "url";
 import launchStaticServer from "../../scripts/launch_static_server.mjs";
 import getHumanReadableHours from "../../scripts/utils/get_human_readable_hours.mjs";
 import removeDir from "../../scripts/utils/remove_dir.mjs";
-import { createContentServer } from "../contents/server.mjs";
+import createContentServer from "../contents/server.mjs";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
