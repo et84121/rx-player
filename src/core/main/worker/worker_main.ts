@@ -594,7 +594,7 @@ function loadOrReloadPreparedContent(
   );
 
   StreamOrchestrator(
-    { initialPeriod: manifest.periods[0], manifest },
+    { initialPeriod, manifest },
     playbackObserver,
     representationEstimator,
     segmentSinksStore,
