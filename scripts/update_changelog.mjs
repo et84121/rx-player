@@ -40,12 +40,6 @@ The resulting file will be the one commited.
 
 ### Proposed additional changelog lines:
 `;
-// const NOTICE_EMPTY = `No merge request found since last changelog update.`;
-
-// XXX TODO?:
-// - We didn't find any merge commit since the last time the changelog file was
-//   udated. Do you want to skip manual changelog editing (only if no update
-//   since last release)
 
 // If true, this script is called directly
 if (import.meta.url === pathToFileURL(process.argv[1]).href) {
@@ -322,7 +316,6 @@ async function checkUpdateTypeWithUser(previousTopH2, newTopH2, defaultBehaviour
     case "y":
     case "yes":
       console.log("Writing CHANGELOG.md...");
-      // XXX TODO
       return defaultBehaviour;
     case "n":
     case "no":
