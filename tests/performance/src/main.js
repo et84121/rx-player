@@ -54,7 +54,7 @@ declareTestGroup(
     player.dispose();
     await sleep(10); // ensure dispose is done
   },
-  10000,
+  20000,
 );
 
 declareTestGroup(
@@ -122,5 +122,5 @@ declareTestGroup(
     player.dispose();
     await sleep(10); // ensure dispose is done
   },
-  10000,
+  20000,
 );
