@@ -176,7 +176,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
             appendToReportFile("❌ Tests have failed.");
           }
           appendToReportFile(
-            "Performance tests 1st run output:\n" + "---------------------------------",
+            "Performance tests 1st run output\n" + "--------------------------------",
           );
         } catch (err) {
           console.error(
@@ -216,9 +216,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
       console.warn("\nRetrying one time just to check if unlucky...");
 
       const results2 = await runPerformanceTests();
-      console.error("\nFinal result after 2 attempts:\n------------------------------\n");
+      console.error("\nFinal result after 2 attempts\n-----------------------------\n");
       appendToReportFile(
-        "\nPerformance tests 2nd run output:\n" + "---------------------------------",
+        "\nPerformance tests 2nd run output\n" + "--------------------------------",
       );
 
       if (results.better.length > 0) {
