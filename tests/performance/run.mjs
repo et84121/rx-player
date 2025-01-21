@@ -169,7 +169,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     .then(async (results) => {
       if (reportFile !== undefined) {
         try {
-          writeFileSync(reportFile, "Tests results\n" + "-------------\n");
+          writeFileSync(reportFile, "Tests results\n" + "-------------\n\n");
           if (results.worse.length === 0) {
             appendToReportFile("✅ Tests have passed.\n");
           } else {
@@ -347,9 +347,10 @@ function formatResultInHumanReadableWay(results) {
       "-".repeat(meanColumnInnerLength) +
       "|" +
       "-".repeat(medianColumnInnerLength) +
-      "|\n";
+      "|";
   }
   for (let i = 0; i < results.length; i++) {
+    str += "\n";
     const nameWhitespaceLength = (nameColumnInnerLength - testNames[i].length) / 2;
     const meanWhitespaceLength = (meanColumnInnerLength - meanResult[i].length) / 2;
     const medianWhitespaceLength = (medianColumnInnerLength - medianResult[i].length) / 2;
