@@ -171,9 +171,9 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
         try {
           writeFileSync(reportFile, "Tests results\n" + "-------------\n");
           if (results.worse.length === 0) {
-            appendToReportFile("✅ Tests have passed.");
+            appendToReportFile("✅ Tests have passed.\n");
           } else {
-            appendToReportFile("❌ Tests have failed.");
+            appendToReportFile("❌ Tests have failed.\n");
           }
           appendToReportFile(
             "Performance tests 1st run output\n" + "--------------------------------",
@@ -187,7 +187,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 
       if (results.worse.length > 0) {
         const failureTxt =
-          "\nWorse performance for tests:\n" +
+          "\nWorse performance for tests:\n\n" +
           formatResultInHumanReadableWay(results.worse);
         console.warn(failureTxt);
         appendToReportFile(failureTxt);
@@ -195,7 +195,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 
       if (results.better.length > 0) {
         const betterTxt =
-          "\nBetter performance for tests:\n" +
+          "\nBetter performance for tests:\n\n" +
           formatResultInHumanReadableWay(results.better);
         console.log(betterTxt);
         appendToReportFile(betterTxt);
@@ -203,7 +203,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 
       if (results.notSignificative.length > 0) {
         const notSignificativeTxt =
-          "\nNo significative change in performance for tests:\n" +
+          "\nNo significative change in performance for tests:\n\n" +
           formatResultInHumanReadableWay(results.notSignificative);
         console.log(notSignificativeTxt);
         appendToReportFile(notSignificativeTxt);
@@ -223,30 +223,30 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 
       if (results.better.length > 0) {
         console.error(
-          "\nBetter performance at first attempt for tests:\n" +
+          "\nBetter performance at first attempt for tests:\n\n" +
             formatResultInHumanReadableWay(results.better),
         );
       }
       if (results2.better.length > 0) {
         const betterTxt =
-          "\nBetter performance for tests:\n" +
+          "\nBetter performance for tests:\n\n" +
           formatResultInHumanReadableWay(results.better);
         appendToReportFile(betterTxt);
         console.error(
-          "\nBetter performance at second attempt for tests:\n" +
+          "\nBetter performance at second attempt for tests:\n\n" +
             formatResultInHumanReadableWay(results2.better),
         );
       }
 
       if (results.worse.length > 0) {
         console.error(
-          "\nWorse performance at first attempt for tests:\n" +
+          "\nWorse performance at first attempt for tests:\n\n" +
             formatResultInHumanReadableWay(results.worse),
         );
       }
       if (results2.worse.length > 0) {
         const failureTxt =
-          "\nWorse performance at second attempt for tests:\n" +
+          "\nWorse performance at second attempt for tests:\n\n" +
           formatResultInHumanReadableWay(results.worse);
         console.warn(failureTxt);
         appendToReportFile(failureTxt);
@@ -254,7 +254,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
 
       if (results2.notSignificative.length > 0) {
         const notSignificativeTxt =
-          "\nNo significative change in performance for tests:\n" +
+          "\nNo significative change in performance for tests:\n\n" +
           formatResultInHumanReadableWay(results.notSignificative);
         appendToReportFile(notSignificativeTxt);
       }
@@ -287,17 +287,88 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   /* eslint-enable no-console */
 }
 
-function formatResultInHumanReadableWay(results, indent = 0) {
-  return results
-    .map(
-      (r, idx) =>
-        (idx === 0 ? "" : "\n") +
-        (indent > 0 ? " ".repeat(indent) : "") +
-        `- \`${r.testName}\` mean: ${r.previousMean.toFixed(2)}ms -> ${r.currentMean.toFixed(2)}ms ` +
-        `(${r.differenceMs.toFixed(3)}ms, ${(r.differencePc * 100).toFixed(3)}%, z: ${r.zScore.toFixed(5)}) ` +
-        `/ median: ${r.previousMedian.toFixed(2)}ms -> ${r.currentMedian.toFixed(2)}ms`,
-    )
-    .join("");
+/**
+ * Take test results as outputed by performance tests and output a markdown
+ * table listing them in hopefully a readable way.
+ * @param {Array.<Object>} results
+ * @returns {string}
+ */
+function formatResultInHumanReadableWay(results) {
+  if (results.length === 0) {
+    return "";
+  }
+  const testNames = results.map((r) => r.testName);
+  const meanResult = results.map(
+    (r) =>
+      `${r.previousMean.toFixed(2)}ms -> ${r.currentMean.toFixed(2)}ms ` +
+      `(${r.differenceMs.toFixed(3)}ms, ${(r.differencePc * 100).toFixed(3)}%, z: ${r.zScore.toFixed(5)})`,
+  );
+  const medianResult = results.map(
+    (r) => `${r.previousMedian.toFixed(2)}ms -> ${r.currentMedian.toFixed(2)}ms`,
+  );
+
+  const nameColumnInnerLength = Math.max(
+    testNames.reduce((acc, t) => Math.max(acc, t.length), 0) + 2 /* margin */,
+    " Name ".length,
+  );
+  const meanColumnInnerLength = Math.max(
+    meanResult.reduce((acc, t) => Math.max(acc, t.length), 0) + 2 /* margin */,
+    " Mean ".length,
+  );
+  const medianColumnInnerLength = Math.max(
+    medianResult.reduce((acc, t) => Math.max(acc, t.length), 0) + 2 /* margin */,
+    " Median ".length,
+  );
+
+  let str;
+
+  {
+    // Table header
+    const nameWhitespaceLength = (nameColumnInnerLength - "Name".length) / 2;
+    const meanWhitespaceLength = (meanColumnInnerLength - "Mean".length) / 2;
+    const medianWhitespaceLength = (medianColumnInnerLength - "Median".length) / 2;
+    str =
+      "|" +
+      " ".repeat(Math.floor(nameWhitespaceLength)) +
+      "Name" +
+      " ".repeat(Math.ceil(nameWhitespaceLength)) +
+      "|" +
+      " ".repeat(Math.floor(meanWhitespaceLength)) +
+      "Mean" +
+      " ".repeat(Math.ceil(meanWhitespaceLength)) +
+      "|" +
+      " ".repeat(Math.floor(medianWhitespaceLength)) +
+      "median" +
+      " ".repeat(Math.ceil(medianWhitespaceLength)) +
+      "|\n" +
+      "|" +
+      "-".repeat(nameColumnInnerLength) +
+      "|" +
+      "-".repeat(meanColumnInnerLength) +
+      "|" +
+      "-".repeat(medianColumnInnerLength) +
+      "|\n";
+  }
+  for (let i = 0; i < results.length; i++) {
+    const nameWhitespaceLength = (nameColumnInnerLength - testNames[i].length) / 2;
+    const meanWhitespaceLength = (meanColumnInnerLength - meanResult[i].length) / 2;
+    const medianWhitespaceLength = (medianColumnInnerLength - medianResult[i].length) / 2;
+    str +=
+      "|" +
+      " ".repeat(Math.floor(nameWhitespaceLength)) +
+      testNames[i] +
+      " ".repeat(Math.ceil(nameWhitespaceLength)) +
+      "|" +
+      " ".repeat(Math.floor(meanWhitespaceLength)) +
+      meanResult[i] +
+      " ".repeat(Math.ceil(meanWhitespaceLength)) +
+      "|" +
+      " ".repeat(Math.floor(medianWhitespaceLength)) +
+      medianResult[i] +
+      " ".repeat(Math.ceil(medianWhitespaceLength)) +
+      "|\n";
+  }
+  return str;
 }
 
 /**
