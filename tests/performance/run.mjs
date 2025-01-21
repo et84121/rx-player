@@ -338,7 +338,7 @@ function formatResultInHumanReadableWay(results) {
       " ".repeat(Math.ceil(meanWhitespaceLength)) +
       "|" +
       " ".repeat(Math.floor(medianWhitespaceLength)) +
-      "median" +
+      "Median" +
       " ".repeat(Math.ceil(medianWhitespaceLength)) +
       "|\n" +
       "|" +
