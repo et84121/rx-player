@@ -169,9 +169,14 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     .then(async (results) => {
       if (reportFile !== undefined) {
         try {
-          writeFileSync(
-            reportFile,
-            "Performance tests 1st run output:\n" + "---------------------------------\n",
+          writeFileSync(reportFile, "Tests results\n" + "-------------\n");
+          if (results.worse.length === 0) {
+            appendToReportFile("✅ Tests have passed.");
+          } else {
+            appendToReportFile("❌ Tests have failed.");
+          }
+          appendToReportFile(
+            "Performance tests 1st run output:\n" + "---------------------------------",
           );
         } catch (err) {
           console.error(
