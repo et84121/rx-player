@@ -167,10 +167,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   })
     .then(() => runPerformanceTests())
     .then(async (results) => {
-      const shouldWriteReportFile =
-        reportFile !== undefined &&
-        (results.better.length > 0 || results.worse.length > 0);
-      if (shouldWriteReportFile) {
+      if (reportFile !== undefined) {
         try {
           writeFileSync(
             reportFile,
@@ -182,12 +179,15 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
           );
         }
       }
-      if (results.notSignificative.length > 0) {
-        const notSignificativeTxt =
-          "\nNo significative change in performance for tests: " +
-          results.notSignificative.map((r) => `\`${r.testName}\``).join(", ");
-        console.log(notSignificativeTxt);
+
+      if (results.worse.length > 0) {
+        const failureTxt =
+          "\nWorse performance for tests:\n" +
+          formatResultInHumanReadableWay(results.worse);
+        console.warn(failureTxt);
+        appendToReportFile(failureTxt);
       }
+
       if (results.better.length > 0) {
         const betterTxt =
           "\nBetter performance for tests:\n" +
@@ -196,70 +196,73 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
         appendToReportFile(betterTxt);
       }
 
+      if (results.notSignificative.length > 0) {
+        const notSignificativeTxt =
+          "\nNo significative change in performance for tests:\n" +
+          formatResultInHumanReadableWay(results.notSignificative);
+        console.log(notSignificativeTxt);
+        appendToReportFile(notSignificativeTxt);
+      }
+
       if (results.worse.length === 0) {
         process.exit(0);
       }
 
-      const failureTxt =
-        "\nWorse performance for tests:\n" +
-        formatResultInHumanReadableWay(results.worse);
-      console.warn(failureTxt);
-      if (reportFile !== undefined) {
-        appendToReportFile(failureTxt);
-      }
       console.warn("\nRetrying one time just to check if unlucky...");
 
       const results2 = await runPerformanceTests();
+      console.error("\nFinal result after 2 attempts:\n------------------------------\n");
       appendToReportFile(
         "\nPerformance tests 2nd run output:\n" + "---------------------------------",
       );
-      if (results2.notSignificative.length > 0) {
-        const notSignificativeTxt =
-          "\nNo significative change in performance for tests: " +
-          results.notSignificative.map((r) => `\`${r.testName}\``).join(", ");
-        console.log("(2nd attempt)", notSignificativeTxt);
+
+      if (results.better.length > 0) {
+        console.error(
+          "\nBetter performance at first attempt for tests:\n" +
+            formatResultInHumanReadableWay(results.better),
+        );
       }
       if (results2.better.length > 0) {
         const betterTxt =
           "\nBetter performance for tests:\n" +
           formatResultInHumanReadableWay(results.better);
-        console.log("(2nd attempt)", betterTxt);
         appendToReportFile(betterTxt);
-      }
-      if (results2.worse.length === 0) {
-        console.warn(
-          "\nWorse performance at first attempt but were not reproduced on second attempts for tests:\n",
-          formatResultInHumanReadableWay(results.worse),
+        console.error(
+          "\nBetter performance at second attempt for tests:\n" +
+            formatResultInHumanReadableWay(results2.better),
         );
-        process.exit(0);
       }
 
-      console.error(
-        "\nWorse performance at first attempt for tests:\n" +
-          formatResultInHumanReadableWay(results.worse),
-      );
-      appendToReportFile(
-        "\n" +
-          "Worse performance for tests:\n" +
-          formatResultInHumanReadableWay(results2.worse),
-      );
+      if (results.worse.length > 0) {
+        console.error(
+          "\nWorse performance at first attempt for tests:\n" +
+            formatResultInHumanReadableWay(results.worse),
+        );
+      }
+      if (results2.worse.length > 0) {
+        const failureTxt =
+          "\nWorse performance at second attempt for tests:\n" +
+          formatResultInHumanReadableWay(results.worse);
+        console.warn(failureTxt);
+        appendToReportFile(failureTxt);
+      }
+
+      if (results2.notSignificative.length > 0) {
+        const notSignificativeTxt =
+          "\nNo significative change in performance for tests:\n" +
+          formatResultInHumanReadableWay(results.notSignificative);
+        appendToReportFile(notSignificativeTxt);
+      }
+
       for (const failure1 of results.worse) {
         if (results2.worse.some((r) => r.testName === failure1.testName)) {
-          console.error(
-            "\nWorse performance at second attempt for tests:\n" +
-              formatResultInHumanReadableWay(results2.worse),
-          );
           process.exit(1);
         }
       }
-      console.error(
-        "\nWorse performance at second attempt for tests:\n",
-        formatResultInHumanReadableWay(results2.worse),
-      );
       process.exit(0);
 
       function appendToReportFile(text) {
-        if (!shouldWriteReportFile) {
+        if (reportFile === undefined) {
           return;
         }
         try {
@@ -1062,7 +1065,7 @@ Available options:
                                     Defaults to the "dev" branch.,
   -u <URL>, --remote-git-url <URL>  Specify the remote git URL where the current repository can be cloned from.
                                     Defaults to the current remote URL.
-  -r <path>, --report <path>        Optional path to markdown file where a report might be written in a
-                                    human-readable way once done if a notable performance difference is seen.`,
+  -r <path>, --report <path>        Optional path to markdown file where a report will be written in a
+                                    human-readable way once done.`,
   );
 }
