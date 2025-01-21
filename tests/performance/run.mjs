@@ -366,7 +366,7 @@ function formatResultInHumanReadableWay(results) {
       " ".repeat(Math.floor(medianWhitespaceLength)) +
       medianResult[i] +
       " ".repeat(Math.ceil(medianWhitespaceLength)) +
-      "|\n";
+      "|";
   }
   return str;
 }
