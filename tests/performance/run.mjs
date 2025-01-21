@@ -329,7 +329,7 @@ function runPerformanceTests() {
       resultServer?.close();
       resultServer = undefined;
       staticServer?.close();
-      resultServer = undefined;
+      staticServer = undefined;
     };
 
     initServers(onFinished, onError)
