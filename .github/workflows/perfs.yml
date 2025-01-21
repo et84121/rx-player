@@ -1,10 +1,17 @@
 name: Performance tests
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
 
+# Abort if new commit since then
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   perf-tests:
+    if: "!contains(github.event.issue.labels.*.name , 'skip-performance-checks')"
     runs-on: [ubuntu-latest]
     permissions:
       pull-requests: write
@@ -41,5 +48,8 @@ jobs:
               repo: context.repo.repo,
               // TODO: generate comment header inside the report file instead of here for better portability?
               // We should already have access to the sha1 through `git` and the destination branch through the command line arguments.
-              body: "Automated performance checks have found a sensible difference on commit \`${{github.event.pull_request.head.sha}}\` with the base branch \`${{github.base_ref}}\`:\n\n" + fileContent,
+              body: "Automated performance checks have found a sensible difference on commit " +
+                    "\`${{github.event.pull_request.head.sha}}\` with the base branch \`${{github.base_ref}}\`:\n\n" +
+                    fileContent +
+                    "\n\n If you want to skip performance checks for latter commits, add the `skip-performance-checks` label to this Pull Request.",
             })
