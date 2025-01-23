@@ -19,6 +19,14 @@ const groups = [];
  */
 let areTestsAlreadyRunning = false;
 
+const hashComponents = parseUrlHash();
+const resultServerPort = parseInt(hashComponents.p);
+const tryAttempt = hashComponents.t === undefined ? 1 : parseInt(hashComponents.t);
+
+if (isNaN(resultServerPort)) {
+  throw new Error("The current page should have a valid result server port in its URL");
+}
+
 /**
  * There are two testing pages, the current one is described by this `page`
  * property:
@@ -82,7 +90,7 @@ export function testEnd(name) {
  * @param {Array.<string>} ...logs
  */
 export function log(...logs) {
-  fetch("http://127.0.0.1:6789", {
+  fetch(`http://127.0.0.1:${resultServerPort}`, {
     headers: { "Content-Type": "application/json" },
     method: "POST",
     body: JSON.stringify({ type: "log", data: logs.join(" ") }),
@@ -97,7 +105,7 @@ export function log(...logs) {
  * @param {Array.<string>} ...logs
  */
 export function error(...logs) {
-  fetch("http://127.0.0.1:6789", {
+  fetch(`http://127.0.0.1:${resultServerPort}`, {
     headers: { "Content-Type": "application/json" },
     method: "POST",
     body: JSON.stringify({ type: "error", data: logs.join(" ") }),
@@ -161,7 +169,7 @@ setTimeout(async () => {
  * test.
  */
 function reportResult(testName, testResult) {
-  fetch("http://127.0.0.1:6789", {
+  fetch(`http://127.0.0.1:${resultServerPort}`, {
     headers: { "Content-Type": "application/json" },
     method: "POST",
     body: JSON.stringify({
@@ -179,14 +187,9 @@ function reportResult(testName, testResult) {
  * page or indicates to the server that it's finished if it is.
  */
 function done() {
-  let testNumber;
-  if (location.hash === "") {
-    testNumber = 1;
-  } else {
-    testNumber = Number(location.hash.substring(1));
-  }
-  if (testNumber < 100) {
-    location.hash = "#" + (testNumber + 1);
+  if (tryAttempt < 100) {
+    hashComponents.t = tryAttempt + 1;
+    updateUrlHash(hashComponents);
     if (page === "previous") {
       location.pathname = "/current.html";
     } else {
@@ -202,9 +205,46 @@ function done() {
  * Allows the server to close the current browser instance and compile results.
  */
 function sendDone() {
-  fetch("http://127.0.0.1:6789", {
+  fetch(`http://127.0.0.1:${resultServerPort}`, {
     headers: { "Content-Type": "application/json" },
     method: "POST",
     body: JSON.stringify({ type: "done" }),
   });
+}
+
+/**
+ * Parse the current URL fragment (format: "#prop1=value1;prop2=value2") and
+ * return it into a JS object (e.g. `{ prop1: "value1", prop2: "value2" }`)
+ * etc.
+ * @returns {Object}
+ */
+function parseUrlHash() {
+  const hash = location.hash[0] === "#" ? location.hash.substring(1) : location.hash;
+  const hashParts = hash.split(";");
+  if (hashParts.length === 0) {
+    throw new Error("The current page should have a fragment present in its URL");
+  }
+  const ret = {};
+  for (const hashPart of hashParts) {
+    const eqlIdx = hashPart.indexOf("=");
+    if (eqlIdx > 0) {
+      const propName = hashPart.substring(0, eqlIdx);
+      ret[propName] = hashPart.substring(eqlIdx + 1);
+    }
+  }
+  return ret;
+}
+
+/**
+ * Reverse of `parseUrlHash`: take a wanted JS Object (e.g.
+ * `{ prop1: "value1", prop2: "value2" }`) and put it in the URL's fragment
+ * so that `parseUrlHash` can then parse it (e.g. "#prop1=value1;prop2=value2").
+ * @param {Object}
+ */
+function updateUrlHash(props) {
+  let hash = "#";
+  for (const prop of Object.keys(props)) {
+    hash += `${prop}=${props[prop] ?? ""};`;
+  }
+  location.hash = hash;
 }

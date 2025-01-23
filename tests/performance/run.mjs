@@ -20,6 +20,9 @@ const CONTENT_SERVER_PORT = 3000;
 /** Port of the HTTP server which will serve the performance test files */
 const PERF_TESTS_PORT = 8080;
 
+/** Port of the HTTP server which will be used to exchange about test results. */
+const RESULT_SERVER_PORT = 6789;
+
 /**
  * Number of times test are runs on each browser/RxPlayer configuration.
  * More iterations means (much) more time to perform tests, but also produce
@@ -622,7 +625,9 @@ async function startTestsOnChrome(startWithCurrent, testNb, testTotal) {
   // eslint-disable-next-line no-console
   console.log(`Running tests on Chrome (${testNb}/${testTotal})`);
   return startPerfhomepageOnChrome(
-    startWithCurrent ? "current.html" : "previous.html",
+    startWithCurrent
+      ? `current.html#p=${RESULT_SERVER_PORT};`
+      : `previous.html#p=${RESULT_SERVER_PORT};`,
   ).catch((err) => {
     throw new Error("Could not launch page on Chrome: " + err.toString());
   });
@@ -657,7 +662,7 @@ function createResultServer(onFinished, onError) {
   const server = createServer(onRequest);
   return {
     listeningPromise: new Promise((res) => {
-      server.listen(6789, function () {
+      server.listen(RESULT_SERVER_PORT, function () {
         res();
       });
     }),
