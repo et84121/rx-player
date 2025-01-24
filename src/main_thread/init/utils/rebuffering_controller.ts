@@ -171,15 +171,16 @@ export default class RebufferingController extends EventEmitter<IRebufferingCont
         if (position.isAwaitingFuturePosition()) {
           playbackRateUpdater.stopRebuffering();
           log.debug("Init: let rebuffering happen as we're awaiting a future position");
-          this.trigger("stalled", stalledReason);
-          return;
+        } else {
+          playbackRateUpdater.startRebuffering();
         }
-
-        playbackRateUpdater.startRebuffering();
 
         if (
           this._manifest === null ||
           (isSeekingApproximate &&
+            // Don't handle discontinuities on devices with broken seeks before
+            // enough time have passed because seeking brings more risks to
+            // lead to a lengthy rebuffering-exiting process
             getMonotonicTimeStamp() - rebuffering.timestamp <= 1000)
         ) {
           this.trigger("stalled", stalledReason);
@@ -188,6 +189,16 @@ export default class RebufferingController extends EventEmitter<IRebufferingCont
 
         /** Position at which data is awaited. */
         const { position: stalledPosition } = rebuffering;
+
+        /**
+         * We may still be in the process of waiting for a position to be seeked
+         * to. When calculating a potential position to e.g. skip over
+         * discontinuities, we should compare it to that "target" position if
+         * one, not the one we're currently playing.
+         */
+        const targetTime = observation.position.isAwaitingFuturePosition()
+          ? observation.position.getWanted()
+          : this._playbackObserver.getCurrentTime();
 
         if (
           stalledPosition !== null &&
@@ -201,10 +212,10 @@ export default class RebufferingController extends EventEmitter<IRebufferingCont
           );
           if (skippableDiscontinuity !== null) {
             const realSeekTime = skippableDiscontinuity + 0.001;
-            if (realSeekTime <= this._playbackObserver.getCurrentTime()) {
+            if (realSeekTime <= targetTime) {
               log.info(
                 "Init: position to seek already reached, no seeking",
-                this._playbackObserver.getCurrentTime(),
+                targetTime,
                 realSeekTime,
               );
             } else {
@@ -243,7 +254,7 @@ export default class RebufferingController extends EventEmitter<IRebufferingCont
           nextBufferRangeGap < BUFFER_DISCONTINUITY_THRESHOLD
         ) {
           const seekTo = positionBlockedAt + nextBufferRangeGap + EPSILON;
-          if (this._playbackObserver.getCurrentTime() < seekTo) {
+          if (targetTime < seekTo) {
             log.warn(
               "Init: discontinuity encountered inferior to the threshold",
               positionBlockedAt,
@@ -266,8 +277,7 @@ export default class RebufferingController extends EventEmitter<IRebufferingCont
           if (period.end !== undefined && period.end <= positionBlockedAt) {
             if (
               this._manifest.periods[i + 1].start > positionBlockedAt &&
-              this._manifest.periods[i + 1].start >
-                this._playbackObserver.getCurrentTime()
+              this._manifest.periods[i + 1].start > targetTime
             ) {
               const nextPeriod = this._manifest.periods[i + 1];
               this._playbackObserver.setCurrentTime(nextPeriod.start);
