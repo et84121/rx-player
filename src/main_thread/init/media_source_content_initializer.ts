@@ -617,11 +617,7 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
       (isPerformed, stopListening) => {
         if (isPerformed) {
           stopListening();
-          const streamEventsEmitter = new StreamEventsEmitter(
-            manifest,
-            mediaElement,
-            playbackObserver,
-          );
+          const streamEventsEmitter = new StreamEventsEmitter(manifest, playbackObserver);
           manifest.addEventListener(
             "manifestUpdate",
             () => {
@@ -748,7 +744,7 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
      */
     autoPlayResult
       .then(() => {
-        getLoadedReference(playbackObserver, mediaElement, false, cancelSignal).onUpdate(
+        getLoadedReference(playbackObserver, false, cancelSignal).onUpdate(
           (isLoaded, stopListening) => {
             if (isLoaded) {
               stopListening();
