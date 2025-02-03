@@ -32,12 +32,46 @@ import sendMessage, { formatErrorForSender } from "./send_message";
 import TrackChoiceSetter from "./track_choice_setter";
 import WorkerTextDisplayerInterface from "./worker_text_displayer_interface";
 
+/** Function allowing to associate a unique identifier to all created `MediaSource` */
 const generateMediaSourceId = idGenerator();
 
+/**
+ * Class facilitating the workflows behind loading a new content for the
+ * RxPlayer Core:
+ *
+ *   - Handle Manifest fetching and Manifest updates.
+ *
+ *   - Handle the `MediaSource`'s creation and indirectly of its `SourceBuffer`s
+ *     as well as handling "MediaSource reloading".
+ *
+ *   - initialize various modules (`segmentQueueCreator`, CmcdDataBuilder`,
+ *     `RepresentationEstimator`) linked to the initialized content.
+ *
+ * You can start loading a content through the `initializeNewContent` method.
+ *
+ * When a content is linked to the `ContentPreparer` you can inspect the
+ * different initialized modules by calling its `getCurrentContent` method.
+ *
+ * @class ContentPreparer
+ */
 export default class ContentPreparer {
+  /**
+   * Information on the content linked to that `ContentPreparer` through its
+   * `initializeNewContent` method.
+   * `null` if no content is initialized.
+   */
   private _currentContent: IPreparedContentData | null;
-  private _currentMediaSourceCanceller: TaskCanceller;
+  /**
+   * TaskCanceller which is triggered when the currently-initialized content is
+   * not needed anymore, because we stopped it since or switched to a new content.
+   */
   private _contentCanceller: TaskCanceller;
+  /**
+   * TaskCanceller which is triggered when the currently-created MediaSource is
+   * not needed anymore, either because the content has changed or because we
+   * had to reload.
+   */
+  private _currentMediaSourceCanceller: TaskCanceller;
 
   /** @see constructor */
   private _hasMseInWorker: boolean;
@@ -73,6 +107,18 @@ export default class ContentPreparer {
     this._contentCanceller = contentCanceller;
   }
 
+  /**
+   * Start fetching the wanted content's Manifest and initializing the various
+   * modules stored by the `ContentPreparer` linked to that content.
+   *
+   * The returned Promise resolves with the parsed Manifest when those modules
+   * are all ready and you can thus begin to load the content.
+   *
+   * Reject if it failed to do so.
+   * @param {Object} context - Information on the content that should be
+   * initialized.
+   * @returns {Promise.<Object>}
+   */
   public initializeNewContent(
     context: IContentInitializationData,
   ): Promise<IManifestMetadata> {
@@ -139,7 +185,7 @@ export default class ContentPreparer {
       const trackChoiceSetter = new TrackChoiceSetter();
 
       const [mediaSource, segmentSinksStore, workerTextSender] =
-        createMediaSourceAndBuffersStore(
+        createMediaSourceInterfaceAndSegmentSinksStore(
           contentId,
           {
             hasMseInWorker: this._hasMseInWorker,
@@ -247,14 +293,36 @@ export default class ContentPreparer {
     });
   }
 
+  /**
+   * Get information on the current content prepared through the
+   * `initializeNewContent` method, or `null` if no content is currently
+   * prepared.
+   * @returns {Object|null}
+   */
   public getCurrentContent(): IPreparedContentData | null {
     return this._currentContent;
   }
 
+  /**
+   * Schedule an update for the Manifest file,
+   *
+   * Do nothing if no content is currently prepared.
+   * @param {Object} settings - Various settings to configure the ways and
+   * moment at which the Manifest will be refreshed.
+   */
   public scheduleManifestRefresh(settings: IManifestRefreshSettings): void {
     this._currentContent?.manifestFetcher.scheduleManualRefresh(settings);
   }
 
+  /**
+   * If there is a prepared content right now, performs the destructive
+   * "reloading" strategy: dispose of its `MediaSource` (and of its
+   * `SourceBuffer`) and recreate one.
+   *
+   * The returned Promise resolves when it restarts being ready.
+   * @param {Object} reloadInfo
+   * @returns {Promise}
+   */
   public reloadMediaSource(reloadInfo: INeedsMediaSourceReloadPayload): Promise<void> {
     this._currentMediaSourceCanceller.cancel();
     if (this._currentContent === null) {
@@ -272,8 +340,8 @@ export default class ContentPreparer {
       [],
     );
 
-    const [mediaSource, segmentSinksStore, workerTextSender] =
-      createMediaSourceAndBuffersStore(
+    const [mediaSourceInterface, segmentSinksStore, workerTextSender] =
+      createMediaSourceInterfaceAndSegmentSinksStore(
         this._currentContent.contentId,
         {
           hasMseInWorker: this._hasMseInWorker,
@@ -282,18 +350,18 @@ export default class ContentPreparer {
         },
         this._currentMediaSourceCanceller.signal,
       );
-    this._currentContent.mediaSource = mediaSource;
+    this._currentContent.mediaSource = mediaSourceInterface;
     this._currentContent.segmentSinksStore = segmentSinksStore;
     this._currentContent.workerTextSender = workerTextSender;
     return new Promise((res, rej) => {
-      mediaSource.addEventListener(
+      mediaSourceInterface.addEventListener(
         "mediaSourceOpen",
         function () {
           res();
         },
         this._currentMediaSourceCanceller.signal,
       );
-      mediaSource.addEventListener(
+      mediaSourceInterface.addEventListener(
         "mediaSourceClose",
         function () {
           rej(new Error("MediaSource ReadyState changed to close during init."));
@@ -306,6 +374,10 @@ export default class ContentPreparer {
     });
   }
 
+  /**
+   * Dispose all resources linked to the currently preopared content if one and
+   * stop linking it to this `ContentPreparer`.
+   */
   public disposeCurrentContent() {
     this._contentCanceller.cancel();
     this._contentCanceller = new TaskCanceller();
@@ -379,7 +451,7 @@ export interface IPreparedContentData {
  * @param {Object} cancelSignal
  * @returns {Array.<Object>}
  */
-function createMediaSourceAndBuffersStore(
+function createMediaSourceInterfaceAndSegmentSinksStore(
   contentId: string,
   capabilities: {
     hasMseInWorker: boolean;
@@ -388,10 +460,10 @@ function createMediaSourceAndBuffersStore(
   },
   cancelSignal: CancellationSignal,
 ): [IMediaSourceInterface, SegmentSinksStore, WorkerTextDisplayerInterface | null] {
-  let mediaSource: IMediaSourceInterface;
+  let mediaSourceInterface: IMediaSourceInterface;
   if (capabilities.hasMseInWorker) {
     const mainMediaSource = new MainMediaSourceInterface(generateMediaSourceId());
-    mediaSource = mainMediaSource;
+    mediaSourceInterface = mainMediaSource;
 
     let sentMediaSourceLink: IAttachMediaSourceWorkerMessagePayload;
     const handle = mainMediaSource.handle;
@@ -410,12 +482,12 @@ function createMediaSourceAndBuffersStore(
         type: WorkerMessageType.AttachMediaSource,
         contentId,
         value: sentMediaSourceLink,
-        mediaSourceId: mediaSource.id,
+        mediaSourceId: mediaSourceInterface.id,
       },
       [handle.value as unknown as Transferable],
     );
   } else {
-    mediaSource = new WorkerMediaSourceInterface(
+    mediaSourceInterface = new WorkerMediaSourceInterface(
       generateMediaSourceId(),
       contentId,
       sendMessage,
@@ -426,12 +498,16 @@ function createMediaSourceAndBuffersStore(
     ? new WorkerTextDisplayerInterface(contentId, sendMessage)
     : null;
   const { hasVideo } = capabilities;
-  const segmentSinksStore = new SegmentSinksStore(mediaSource, hasVideo, textSender);
+  const segmentSinksStore = new SegmentSinksStore(
+    mediaSourceInterface,
+    hasVideo,
+    textSender,
+  );
   cancelSignal.register(() => {
     segmentSinksStore.disposeAll();
     textSender?.stop();
-    mediaSource.dispose();
+    mediaSourceInterface.dispose();
   });
 
-  return [mediaSource, segmentSinksStore, textSender];
+  return [mediaSourceInterface, segmentSinksStore, textSender];
 }
