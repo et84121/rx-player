@@ -363,6 +363,7 @@ export default class TracksStore extends EventEmitter<ITracksStoreEvents> {
     period: IPeriodMetadata,
     adaptationRef: SharedReference<IAdaptationChoice | null | undefined>,
   ): void {
+    log.debug("TS: Adding Track Reference", bufferType, period.id);
     let periodObj = getPeriodItem(this._storedPeriodInfo, period.id);
     if (periodObj === undefined) {
       // The Period has not yet been added.
@@ -383,7 +384,7 @@ export default class TracksStore extends EventEmitter<ITracksStoreEvents> {
       log.error(
         `TS: Subject already added for ${bufferType} ` + `and Period ${period.start}`,
       );
-      return;
+      periodObj[bufferType].dispatcher.dispose();
     }
 
     const dispatcher = new TrackDispatcher(adaptationRef);
@@ -502,6 +503,7 @@ export default class TracksStore extends EventEmitter<ITracksStoreEvents> {
     bufferType: "audio" | "text" | "video",
     periodId: string,
   ): void {
+    log.debug("TS: Removing Track Reference", bufferType, periodId);
     let periodIndex;
     for (let i = 0; i < this._storedPeriodInfo.length; i++) {
       const periodI = this._storedPeriodInfo[i];
@@ -600,6 +602,7 @@ export default class TracksStore extends EventEmitter<ITracksStoreEvents> {
    * You might want to call this API when restarting playback.
    */
   public resetPeriodObjects(): void {
+    log.debug("TS: Resetting Period Objects");
     for (let i = this._storedPeriodInfo.length - 1; i >= 0; i--) {
       const storedObj = this._storedPeriodInfo[i];
       storedObj.audio.dispatcher?.dispose();
