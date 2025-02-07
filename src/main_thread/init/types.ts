@@ -192,12 +192,13 @@ export interface IContentInitializerEvents {
      */
     type: IBufferType;
     /**
-     * The `Period` linked to the `PeriodStream` we just removed.
+     * The `id` property of the `Period` linked to the `PeriodStream` we just
+     * removed.
      *
      * The combination of this and `Period` should give you enough information
      * about which `PeriodStream` has been removed.
      */
-    period: IPeriodMetadata;
+    periodId: string;
   };
   /** Emitted when a new `Adaptation` is being considered. */
   adaptationChange: IAdaptationChangeEventPayload;

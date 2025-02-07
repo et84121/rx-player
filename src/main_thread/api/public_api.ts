@@ -2849,12 +2849,12 @@ class Player extends EventEmitter<IPublicAPIEvent> {
    */
   private _priv_onPeriodStreamCleared(
     contentInfos: IPublicApiContentInfos,
-    value: { type: IBufferType; period: IPeriodMetadata },
+    value: { type: IBufferType; periodId: string },
   ): void {
     if (contentInfos.contentId !== this._priv_contentInfos?.contentId) {
       return; // Event for another content
     }
-    const { type, period } = value;
+    const { type, periodId } = value;
     const tracksStore = contentInfos.tracksStore;
 
     // Clean-up track choices from TracksStore
@@ -2863,7 +2863,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
       case "text":
       case "video":
         if (!isNullOrUndefined(tracksStore)) {
-          tracksStore.removeTrackReference(type, period);
+          tracksStore.removeTrackReference(type, periodId);
         }
         break;
     }
@@ -2872,23 +2872,23 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     const { activeAdaptations, activeRepresentations } = contentInfos;
     if (
       !isNullOrUndefined(activeAdaptations) &&
-      !isNullOrUndefined(activeAdaptations[period.id])
+      !isNullOrUndefined(activeAdaptations[periodId])
     ) {
-      const activePeriodAdaptations = activeAdaptations[period.id];
+      const activePeriodAdaptations = activeAdaptations[periodId];
       delete activePeriodAdaptations[type];
       if (Object.keys(activePeriodAdaptations).length === 0) {
-        delete activeAdaptations[period.id];
+        delete activeAdaptations[periodId];
       }
     }
 
     if (
       !isNullOrUndefined(activeRepresentations) &&
-      !isNullOrUndefined(activeRepresentations[period.id])
+      !isNullOrUndefined(activeRepresentations[periodId])
     ) {
-      const activePeriodRepresentations = activeRepresentations[period.id];
+      const activePeriodRepresentations = activeRepresentations[periodId];
       delete activePeriodRepresentations[type];
       if (Object.keys(activePeriodRepresentations).length === 0) {
-        delete activeRepresentations[period.id];
+        delete activeRepresentations[periodId];
       }
     }
   }

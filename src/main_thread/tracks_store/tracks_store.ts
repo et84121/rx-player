@@ -496,15 +496,22 @@ export default class TracksStore extends EventEmitter<ITracksStoreEvents> {
    * Remove shared reference to choose an "audio", "video" or "text" Adaptation
    * for a Period.
    * @param {string} bufferType - The concerned buffer type
-   * @param {Period} period - The concerned Period.
+   * @param {string} periodId - The concerned Period's `id`.
    */
   public removeTrackReference(
     bufferType: "audio" | "text" | "video",
-    period: IPeriodMetadata,
+    periodId: string,
   ): void {
-    const periodIndex = findPeriodIndex(this._storedPeriodInfo, period);
+    let periodIndex;
+    for (let i = 0; i < this._storedPeriodInfo.length; i++) {
+      const periodI = this._storedPeriodInfo[i];
+      if (periodI.period.id === periodId) {
+        periodIndex = i;
+        break;
+      }
+    }
     if (periodIndex === undefined) {
-      log.warn(`TS: ${bufferType} not found for period`, period.start);
+      log.warn(`TS: ${bufferType} not found for period`, periodId);
       return;
     }
 
@@ -513,7 +520,7 @@ export default class TracksStore extends EventEmitter<ITracksStoreEvents> {
     if (choiceItem?.dispatcher === null) {
       log.warn(
         `TS: TrackDispatcher already removed for ${bufferType} ` +
-          `and Period ${period.start}`,
+          `and Period ${periodId}`,
       );
       return;
     }
@@ -1375,26 +1382,6 @@ export default class TracksStore extends EventEmitter<ITracksStoreEvents> {
       periodObj.video.dispatcher !== null &&
       periodObj.audio.dispatcher !== null
     );
-  }
-}
-
-/**
- * Returns the index of the given `period` in the given `periods`
- * Array.
- * Returns `undefined` if that `period` is not found.
- * @param {Object} periods
- * @param {Object} period
- * @returns {number|undefined}
- */
-function findPeriodIndex(
-  periods: ITSPeriodObject[],
-  period: IPeriodMetadata,
-): number | undefined {
-  for (let i = 0; i < periods.length; i++) {
-    const periodI = periods[i];
-    if (periodI.period.id === period.id) {
-      return i;
-    }
   }
 }
 

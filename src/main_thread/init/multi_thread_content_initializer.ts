@@ -969,15 +969,8 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
           ) {
             return;
           }
-          const period = arrayFind(
-            this._currentContentInfo.manifest.periods,
-            (p) => p.id === msgData.value.periodId,
-          );
-          if (period === undefined) {
-            return;
-          }
           this.trigger("periodStreamCleared", {
-            period,
+            periodId: msgData.value.periodId,
             type: msgData.value.bufferType,
           });
           break;
