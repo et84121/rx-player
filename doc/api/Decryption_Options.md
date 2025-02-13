@@ -251,7 +251,7 @@ Note that if setting that property to `true` fixes your issue, it may be that it
 the [`maxSessionCacheSize`](#maxsessioncachesize) which is for now too high.
 
 However if your problem doesn't disappear after setting `closeSessionsOnStop` to `true`,
-you may try [`reuseMediaKeys`](#renewmediakeys) next.
+you may try [`reuseMediaKeys`](#reusemediakeys) next.
 
 ### reuseMediaKeys
 
