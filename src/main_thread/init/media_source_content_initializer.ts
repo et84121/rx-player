@@ -917,7 +917,10 @@ export default class MediaSourceContentInitializer extends ContentInitializer {
           if (cancelSignal.isCancelled()) {
             return; // Previous call has stopped streams due to a side-effect
           }
-          self.trigger("periodStreamCleared", value);
+          self.trigger("periodStreamCleared", {
+            type: value.type,
+            periodId: value.period.id,
+          });
         },
 
         bitrateEstimateChange: (value) => {
