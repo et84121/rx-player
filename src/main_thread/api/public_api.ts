@@ -1241,7 +1241,6 @@ class Player extends EventEmitter<IPublicAPIEvent> {
           seekEventsCanceller = new TaskCanceller();
           seekEventsCanceller.linkToSignal(currentContentCanceller.signal);
           emitSeekEvents(
-            videoElement,
             playbackObserver,
             () => this.trigger("seeking", null),
             () => this.trigger("seeked", null),

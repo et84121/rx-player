@@ -1556,11 +1556,7 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
       (isPerformed, stopListening) => {
         if (isPerformed) {
           stopListening();
-          const streamEventsEmitter = new StreamEventsEmitter(
-            manifest,
-            mediaElement,
-            playbackObserver,
-          );
+          const streamEventsEmitter = new StreamEventsEmitter(manifest, playbackObserver);
           currentContentInfo.streamEventsEmitter = streamEventsEmitter;
           streamEventsEmitter.addEventListener(
             "event",
@@ -1618,7 +1614,7 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
      */
     autoPlayResult
       .then(() => {
-        getLoadedReference(playbackObserver, mediaElement, false, cancelSignal).onUpdate(
+        getLoadedReference(playbackObserver, false, cancelSignal).onUpdate(
           (isLoaded, stopListening) => {
             if (isLoaded) {
               stopListening();
