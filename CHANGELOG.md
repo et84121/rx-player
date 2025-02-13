@@ -1,6 +1,6 @@
 # Changelog
 
-## Current dev build: v4.3.0-dev.2025012900
+## Current dev build: v4.3.0-dev.2025021300
 
 ### Features
 
@@ -23,6 +23,9 @@
   `MediaKeySystemAccess` with a different `keySystems[]` configuration [#1616]
 - On Tizen, fix infinite loading that may occur in some condition if both the audio and
   video segments have a gap at the expected initial position [#1637]
+- fix rare infinite rebuffering issues that may happen when updating tracks in a
+  `newAvailablePeriods` event [#1643]
+- MULTI_THREAD: Fix potential leak when cleaning now inexistant Period [#1644]
 
 ### Other improvements
 
