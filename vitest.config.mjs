@@ -5,20 +5,22 @@ function getBrowserConfig(browser) {
     case "chrome":
       return {
         enabled: true,
-        name: "chrome",
         provider: "webdriverio",
         headless: true,
-        providerOptions: {
-          capabilities: {
-            "goog:chromeOptions": {
-              args: [
-                "--autoplay-policy=no-user-gesture-required",
-                "--enable-precise-memory-info",
-                "--js-flags=--expose-gc",
-              ],
+        instances: [
+          {
+            browser: "chrome",
+            capabilities: {
+              "goog:chromeOptions": {
+                args: [
+                  "--autoplay-policy=no-user-gesture-required",
+                  "--enable-precise-memory-info",
+                  "--js-flags=--expose-gc",
+                ],
+              },
             },
           },
-        },
+        ],
       };
 
     case "firefox":
@@ -27,20 +29,23 @@ function getBrowserConfig(browser) {
         name: "firefox",
         provider: "webdriverio",
         headless: true,
-        providerOptions: {
-          capabilities: {
-            "moz:firefoxOptions": {
-              prefs: {
-                "media.autoplay.default": 0,
-                "media.autoplay.enabled.user-gestures-needed": false,
-                "media.autoplay.block-webaudio": false,
-                "media.autoplay.ask-permission": false,
-                "media.autoplay.block-event.enabled": false,
-                "media.block-autoplay-until-in-foreground": false,
+        instances: [
+          {
+            browser: "firefox",
+            capabilities: {
+              "moz:firefoxOptions": {
+                prefs: {
+                  "media.autoplay.default": 0,
+                  "media.autoplay.enabled.user-gestures-needed": false,
+                  "media.autoplay.block-webaudio": false,
+                  "media.autoplay.ask-permission": false,
+                  "media.autoplay.block-event.enabled": false,
+                  "media.block-autoplay-until-in-foreground": false,
+                },
               },
             },
           },
-        },
+        ],
       };
 
     default:
