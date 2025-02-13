@@ -237,7 +237,7 @@ export function toAudioTrack(
     audioDescription: adaptation.isAudioDescription === true,
     id: adaptation.id,
     representations: (filterPlayable
-      ? adaptation.representations.filter((r) => isRepresentationPlayable(r))
+      ? adaptation.representations.filter((r) => isRepresentationPlayable(r) === true)
       : adaptation.representations
     ).map(toAudioRepresentation),
     label: adaptation.label,

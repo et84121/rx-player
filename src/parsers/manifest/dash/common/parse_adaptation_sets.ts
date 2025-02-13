@@ -240,7 +240,7 @@ function getAdaptationSetSwitchingIDs(
         return supplementalProperty.value
           .split(",")
           .map((id) => id.trim())
-          .filter((id) => id);
+          .filter((id) => isNonEmptyString(id));
       }
     }
   }
