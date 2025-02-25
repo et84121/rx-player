@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
-import type { IMediaElement } from "../../compat/browser_compatibility_types";
-import type { ICustomMediaKeys, ICustomMediaKeySystemAccess } from "../../compat/eme";
+import type {
+  IMediaElement,
+  IMediaKeySystemAccess,
+  IMediaKeys,
+} from "../../compat/browser_compatibility_types";
 import eme, { getInitData } from "../../compat/eme";
 import config from "../../config";
 import { EncryptedMediaError, OtherError } from "../../errors";
@@ -992,7 +995,7 @@ export default class ContentDecryptor extends EventEmitter<IContentDecryptorEven
  * @returns {Boolean}
  */
 function canCreatePersistentSession(
-  mediaKeySystemAccess: MediaKeySystemAccess | ICustomMediaKeySystemAccess,
+  mediaKeySystemAccess: IMediaKeySystemAccess,
 ): boolean {
   const { sessionTypes } = mediaKeySystemAccess.getConfiguration();
   return sessionTypes !== undefined && arrayIncludes(sessionTypes, "persistent-license");
@@ -1004,9 +1007,7 @@ function canCreatePersistentSession(
  * @param {MediaKeySystemAccess} mediaKeySystemAccess
  * @returns {Boolean}
  */
-function canCreateTemporarySession(
-  mediaKeySystemAccess: MediaKeySystemAccess | ICustomMediaKeySystemAccess,
-): boolean {
+function canCreateTemporarySession(mediaKeySystemAccess: IMediaKeySystemAccess): boolean {
   const { sessionTypes } = mediaKeySystemAccess.getConfiguration();
   return sessionTypes !== undefined && arrayIncludes(sessionTypes, "temporary");
 }
@@ -1381,9 +1382,9 @@ interface IActiveSessionInfo {
  */
 interface IAttachedMediaKeysData {
   /** The MediaKeySystemAccess which allowed to create the MediaKeys instance. */
-  mediaKeySystemAccess: MediaKeySystemAccess | ICustomMediaKeySystemAccess;
+  mediaKeySystemAccess: IMediaKeySystemAccess;
   /** The MediaKeys instance. */
-  mediaKeys: MediaKeys | ICustomMediaKeys;
+  mediaKeys: IMediaKeys;
   stores: IMediaKeySessionStores;
   options: IKeySystemOption;
 }
