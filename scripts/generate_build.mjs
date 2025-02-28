@@ -11,10 +11,6 @@
  * ```sh
  * node generate_build.mjs
  * ```
- *
- * For now it heavily relies on unix-like utilities such as `find` and `sed` and
- * spawns new process to run them inside that script.
- * More cross-platform and safer solutions should be found in the future.
  */
 
 import { spawn } from "child_process";
