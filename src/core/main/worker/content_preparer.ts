@@ -26,7 +26,7 @@ import type { IManifestRefreshSettings } from "../../fetchers";
 import { ManifestFetcher, SegmentQueueCreator } from "../../fetchers";
 import SegmentSinksStore from "../../segment_sinks";
 import type { INeedsMediaSourceReloadPayload } from "../../stream";
-import DecipherabilityFreezeDetector from "../common/DecipherabilityFreezeDetector";
+import FreezeResolver from "../common/FreezeResolver";
 import { limitVideoResolution, throttleVideoBitrate } from "./globals";
 import sendMessage, { formatErrorForSender } from "./send_message";
 import TrackChoiceSetter from "./track_choice_setter";
@@ -130,7 +130,8 @@ export default class ContentPreparer {
 
       currentMediaSourceCanceller.linkToSignal(contentCanceller.signal);
 
-      const { contentId, url, hasText, transportOptions } = context;
+      const { contentId, url, hasText, transportOptions, enableRepresentationAvoidance } =
+        context;
       let manifest: IManifest | null = null;
 
       // TODO better way
@@ -194,13 +195,12 @@ export default class ContentPreparer {
           },
           currentMediaSourceCanceller.signal,
         );
-      const decipherabilityFreezeDetector = new DecipherabilityFreezeDetector(
-        segmentSinksStore,
-      );
+      const freezeResolver = new FreezeResolver(segmentSinksStore);
       this._currentContent = {
         cmcdDataBuilder,
         contentId,
-        decipherabilityFreezeDetector,
+        enableRepresentationAvoidance,
+        freezeResolver,
         mediaSource,
         manifest: null,
         manifestFetcher,
@@ -357,6 +357,7 @@ export default class ContentPreparer {
       );
     this._currentContent.mediaSource = mediaSourceInterface;
     this._currentContent.segmentSinksStore = segmentSinksStore;
+    this._currentContent.freezeResolver = new FreezeResolver(segmentSinksStore);
     this._currentContent.workerTextSender = workerTextSender;
     return new Promise((res, rej) => {
       mediaSourceInterface.addEventListener(
@@ -406,6 +407,12 @@ export interface IPreparedContentData {
    */
   cmcdDataBuilder: CmcdDataBuilder | null;
   /**
+   * If `true`, the RxPlayer can enable its "Representation avoidance"
+   * mechanism, where it avoid loading Representation that it suspect
+   * have issues being decoded on the current device.
+   */
+  enableRepresentationAvoidance: boolean;
+  /**
    * Interface to the MediaSource implementation, allowing to buffer audio
    * and video media segments.
    */
@@ -419,10 +426,10 @@ export interface IPreparedContentData {
    */
   manifest: IManifest | null;
   /**
-   * Specific module detecting freezing issues due to lower-level
-   * decipherability-related bugs.
+   * Specific module detecting freezing issues and trying to work-around
+   * them.
    */
-  decipherabilityFreezeDetector: DecipherabilityFreezeDetector;
+  freezeResolver: FreezeResolver;
   /**
    * Perform the adaptive logic, allowing to choose the best Representation for
    * the different types of media to load.

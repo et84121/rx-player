@@ -34,7 +34,9 @@ import type {
 } from "../../stream";
 import StreamOrchestrator from "../../stream";
 import createContentTimeBoundariesObserver from "../common/create_content_time_boundaries_observer";
+import type { IFreezeResolution } from "../common/FreezeResolver";
 import getBufferedDataPerMediaBuffer from "../common/get_buffered_data_per_media_buffer";
+import synchronizeSegmentSinksOnObservation from "../common/synchronize_sinks_on_observation";
 import ContentPreparer from "./content_preparer";
 import {
   limitVideoResolution,
@@ -150,6 +152,7 @@ export default function initializeWorkerMain() {
         currentLoadedContentTaskCanceller.signal.register(() => {
           currentContentObservationRef.finish();
         });
+        log.debug("WP: Loading new pepared content.");
         loadOrReloadPreparedContent(
           msg.value,
           contentPreparer,
@@ -487,6 +490,7 @@ function loadOrReloadPreparedContent(
   playbackObservationRef: IReadOnlySharedReference<IWorkerPlaybackObservation>,
   parentCancelSignal: CancellationSignal,
 ) {
+  log.debug("WP: Loading prepared content");
   const currentLoadCanceller = new TaskCanceller();
   currentLoadCanceller.linkToSignal(parentCancelSignal);
 
@@ -516,6 +520,7 @@ function loadOrReloadPreparedContent(
   const {
     contentId,
     cmcdDataBuilder,
+    enableRepresentationAvoidance,
     manifest,
     mediaSource,
     representationEstimator,
@@ -523,23 +528,20 @@ function loadOrReloadPreparedContent(
     segmentQueueCreator,
   } = preparedContent;
   const { drmSystemId, enableFastSwitching, initialTime, onCodecSwitch } = val;
+
   playbackObservationRef.onUpdate(
     (observation) => {
-      if (preparedContent.decipherabilityFreezeDetector.needToReload(observation)) {
-        handleMediaSourceReload({
-          timeOffset: 0,
-          minimumPosition: 0,
-          maximumPosition: Infinity,
+      synchronizeSegmentSinksOnObservation(observation, segmentSinksStore);
+      const freezeResolution =
+        preparedContent.freezeResolver.onNewObservation(observation);
+      if (freezeResolution !== null) {
+        handleFreezeResolution(freezeResolution, {
+          contentId,
+          manifest,
+          handleMediaSourceReload,
+          enableRepresentationAvoidance,
         });
       }
-
-      // Synchronize SegmentSinks with what has been buffered.
-      ["video" as const, "audio" as const, "text" as const].forEach((tType) => {
-        const segmentSinkStatus = segmentSinksStore.getStatus(tType);
-        if (segmentSinkStatus.type === "initialized") {
-          segmentSinkStatus.value.synchronizeInventory(observation.buffered[tType] ?? []);
-        }
-      });
     },
     { clearSignal: currentLoadCanceller.signal },
   );
@@ -881,8 +883,15 @@ function loadOrReloadPreparedContent(
     if (currentLoadCanceller !== null) {
       currentLoadCanceller.cancel();
     }
+    log.debug(
+      "WP: Reloading MediaSource",
+      payload.timeOffset,
+      payload.minimumPosition,
+      payload.maximumPosition,
+    );
     contentPreparer.reloadMediaSource(payload).then(
       () => {
+        log.info("WP: MediaSource Reloaded, loading content again");
         loadOrReloadPreparedContent(
           {
             initialTime: newInitialTime,
@@ -959,4 +968,72 @@ function sendSegmentSinksStoreInfos(
     contentId: currentContent.contentId,
     value: { segmentSinkMetrics: segmentSinksMetrics, messageId },
   });
+}
+
+/**
+ * Handle accordingly an `IFreezeResolution` object.
+ * @param {Object|null} freezeResolution - The `IFreezeResolution` suggested.
+ * @param {Object} param - Parameters that might be needed to implement the
+ * resolution.
+ * @param {string} param.contentId - `contentId` for the current content, used
+ * e.g. for message exchanges between threads.
+ * @param {Object} param.manifest - The current content's Manifest object.
+ * @param {Function} param.handleMediaSourceReload - Function to call if we need
+ * to ask for a "MediaSource reload".
+ * @param {Boolean} param.enableRepresentationAvoidance - If `true`, this
+ * function is authorized to mark `Representation` as "to avoid" if the
+ * `IFreezeResolution` object suggest it.
+ */
+function handleFreezeResolution(
+  freezeResolution: IFreezeResolution,
+  {
+    contentId,
+    manifest,
+    handleMediaSourceReload,
+    enableRepresentationAvoidance,
+  }: {
+    contentId: string;
+    manifest: Manifest;
+    handleMediaSourceReload: (payload: INeedsMediaSourceReloadPayload) => void;
+    enableRepresentationAvoidance: boolean;
+  },
+): void {
+  switch (freezeResolution.type) {
+    case "reload": {
+      log.info("WP: Planning reload due to freeze");
+      handleMediaSourceReload({
+        timeOffset: 0,
+        minimumPosition: 0,
+        maximumPosition: Infinity,
+      });
+      break;
+    }
+    case "flush": {
+      log.info("WP: Flushing buffer due to freeze");
+      sendMessage({
+        type: WorkerMessageType.NeedsBufferFlush,
+        contentId,
+        value: {
+          relativeResumingPosition: freezeResolution.value.relativeSeek,
+          relativePosHasBeenDefaulted: false,
+        },
+      });
+      break;
+    }
+    case "avoid-representations": {
+      log.info("WP: Planning Representation avoidance due to freeze");
+      const content = freezeResolution.value;
+      if (enableRepresentationAvoidance) {
+        manifest.addRepresentationsToAvoid(content);
+      }
+      handleMediaSourceReload({
+        timeOffset: 0,
+        minimumPosition: 0,
+        maximumPosition: Infinity,
+      });
+      break;
+    }
+    default:
+      assertUnreachable(freezeResolution);
+  }
 }

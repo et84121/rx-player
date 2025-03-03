@@ -109,6 +109,12 @@ export interface IContentInitializationData {
    */
   cmcd?: ICmcdOptions | undefined;
   /**
+   * If `true`, the RxPlayer can enable its "Representation avoidance"
+   * mechanism, where it avoid loading Representation that it suspect
+   * have issues being decoded on the current device.
+   */
+  enableRepresentationAvoidance: boolean;
+  /**
    * URL at which the content's Manifest is accessible.
    * `undefined` if unknown.
    */
@@ -427,6 +433,8 @@ export interface ISerializedPlaybackObservation {
    *  to be buffered at this time.
    */
   canStream: boolean;
+  /** If `true` the content is loaded until its maximum position. */
+  fullyLoaded: boolean;
 }
 
 /**

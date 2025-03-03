@@ -173,6 +173,7 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
       value: {
         contentId,
         cmcd: this._settings.cmcd,
+        enableRepresentationAvoidance: this._settings.enableRepresentationAvoidance,
         url: this._settings.url,
         hasText: this._hasTextBufferFeature(),
         transportOptions,
@@ -690,7 +691,10 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
           if (this._currentContentInfo?.contentId !== msgData.contentId) {
             return;
           }
-          const currentTime = mediaElement.currentTime;
+          const lastObservation = playbackObserver.getReference().getValue();
+          const currentTime = lastObservation.position.isAwaitingFuturePosition()
+            ? lastObservation.position.getWanted()
+            : mediaElement.currentTime;
           const relativeResumingPosition = msgData.value?.relativeResumingPosition ?? 0;
           const canBeApproximateSeek = Boolean(
             msgData.value?.relativePosHasBeenDefaulted,
@@ -1898,6 +1902,12 @@ export interface IInitializeArguments {
    * When set to an object, enable "Common Media Client Data", or "CMCD".
    */
   cmcd?: ICmcdOptions | undefined;
+  /**
+   * If `true`, the RxPlayer can enable its "Representation avoidance"
+   * mechanism, where it avoid loading Representation that it suspect
+   * have issues being decoded on the current device.
+   */
+  enableRepresentationAvoidance: boolean;
   /** Every encryption configuration set. */
   keySystems: IKeySystemOption[];
   /** `true` to play low-latency contents optimally. */
