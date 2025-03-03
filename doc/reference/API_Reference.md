@@ -189,6 +189,10 @@ events and so on.
 - [`mode`](../api/Loading_a_Content.md#mode): Force the content to be loaded in a
   `"mulithread"` mode or not.
 
+- [`experimentalOptions.enableRepresentationAvoidance`](../api/Loading_a_Content.md#experimentaloptionsenablerepresentationavoidance):
+  Enable the "Representation Avoidance" mechanism, allowing to work around some playback
+  issues.
+
 ## Static methods
 
 - [`addFeatures`](../api/RxPlayer_Features.md): Add features to the RxPlayer (e.g.:
