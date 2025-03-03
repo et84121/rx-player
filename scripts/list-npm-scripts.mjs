@@ -130,7 +130,7 @@ async function getChoice(maxNb) {
  * Redirect its stdin and stdout to ours, communicate signals, and exit when
  * the script exits.
  *
- * @param {string} cmd
+ * @param {string} script
  */
 function executeNpmScript(script) {
   const emphasizedCmdStr = emphasize(`npm run ${script}`);

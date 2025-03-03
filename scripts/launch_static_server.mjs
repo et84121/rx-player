@@ -132,10 +132,12 @@ export default function launchStaticServer(path, config) {
         return;
       }
       httpServerStatus = "success";
-      console.log(
-        `[${getHumanReadableHours()}] ` +
-          `Listening HTTP at http://localhost:${config.httpPort}`,
-      );
+      if (config.verbose) {
+        console.log(
+          `[${getHumanReadableHours()}] ` +
+            `Listening HTTP at http://localhost:${config.httpPort}`,
+        );
+      }
       if (httpsServerStatus !== null) {
         res({ https: httpsServerStatus === "success", http: true });
       }
@@ -160,10 +162,12 @@ export default function launchStaticServer(path, config) {
         return;
       }
       httpsServerStatus = "success";
-      console.log(
-        `[${getHumanReadableHours()}] ` +
-          `Listening HTTPS at https://localhost:${config.httpsPort}`,
-      );
+      if (config.verbose) {
+        console.log(
+          `[${getHumanReadableHours()}] ` +
+            `Listening HTTPS at https://localhost:${config.httpsPort}`,
+        );
+      }
       if (httpServerStatus !== null) {
         res({ https: true, http: httpServerStatus === "success" });
       }

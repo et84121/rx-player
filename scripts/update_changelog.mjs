@@ -541,7 +541,10 @@ function displayHelp() {
   /* eslint-disable no-console */
   console.log(
     /* eslint-disable indent */
-    `Usage: node update_changelog.mjs [options] <version>
+    `update_changelog.mjs: Automatically update the CHANGELOG.md file.
+
+Usage: node update_changelog.mjs [OPTIONS] <VERSION>
+
 Options:
 -h, --help             Display this help
 -d, --dev              This is for a development release`,
