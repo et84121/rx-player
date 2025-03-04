@@ -1,12 +1,14 @@
 # Changelog
 
-## Current dev build: v4.3.0-dev.2025021300
+## Current dev build: v4.3.0-dev.2025030400
 
 ### Features
 
 - Add the possibility to rely on `ManagedMediaSource` on iOS devices [#1562]
-- DRM: Add `keySystems[].wantedSessionTypes` `loadVideo` option to also initialize a
+- DRM: Add `keySystems[].wantedSessionTypes` `loadVideo` option to also initialize a DRM
   config for future contents, not just the current one [#1604]
+- Add `experimentalOptions.enableRepresentationAvoidance` option to `loadVideo` to enable
+  the new Representation avoidance mechanism [#1523]
 
 ### Bug fixes
 
@@ -14,6 +16,7 @@
 - MULTI_THREAD: Fix `onmessageerror` being undefined on older devices [#1585]
 - Compat: On "FREEZING" try to un-freeze regardless of if the wanted position was reached
   to fix a remaining Tizen (Samsung) infinite rebuffering issue [#1586]
+- MULTI_THREAD: Fix error not being thrown on manifest update [#1653]
 - DRM: fix typo which prevented `MediaKeys` reusage on some devices including desktop
   browsers [#1615]
 - DRM: Only ask for `"persistent-license"` `MediaKeySession` (and not also for
@@ -35,6 +38,8 @@
   content [#1591]
 - MULTI_THREAD: Some `LOADING` and `RELOADING` attempts may have taken more time than
   necessary due to a wrong "initial Period prediction", this is fixed [#1628]
+- Improve `FREEZING` work-arounds by reloading if our initial strategies do not give a
+  result [#1523]
 - DRM: Reuse cache even if key system type given in API is not the same [#1611]
 - DEBUG_ELEMENT: Add buffer size estimate to debug buffer content graph [#1558]
 - DEBUG_ELEMENT: Add `hdr` information to video Representation [#1583]
