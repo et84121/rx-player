@@ -754,14 +754,16 @@ class Player extends EventEmitter<IPublicAPIEvent> {
   }
 
   /**
-   * Returns either an array decribing the various thumbnail tracks that can be
-   * encountered at the given time, or `null` if no thumbnail track is available
-   * at that time.
+   * Returns an array decribing the various thumbnail tracks that can be
+   * encountered at the wanted time or Period.
    * @param {Object} arg
-   * @param {number|undefined} arg.time - The position to check for thumbnail
+   * @param {number|undefined} [arg.time] - The position to check for thumbnail
    * tracks, in seconds.
-   * @param {string|undefined} arg.periodId
-   * @returns {Array.<Object>|null}
+   * @param {string|undefined} [arg.periodId] - The Period to check for
+   * thumbnail tracks.
+   * If not set and if `arg.time` is also not set, the current Period will be
+   * considered.
+   * @returns {Array.<Object>}
    */
   public getAvailableThumbnailTracks({
     time,
