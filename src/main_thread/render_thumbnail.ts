@@ -175,7 +175,8 @@ export default async function renderThumbnail(
           reject(
             new ThumbnailRenderingError(
               "RENDERING",
-              "Could not draw the image in a canvas",
+              "Could not draw the image in a canvas:" +
+                (srcError instanceof Error ? srcError.toString() : "Unknown Error"),
             ),
           );
         }
