@@ -821,6 +821,16 @@ class Player extends EventEmitter<IPublicAPIEvent> {
    * @returns {Promise}
    */
   public async renderThumbnail(options: IThumbnailRenderingOptions): Promise<void> {
+    if (isNullOrUndefined(options.time)) {
+      throw new Error(
+        "You have to provide a `time` property to `renderThumbnail`, indicating the wanted thumbnail time in seconds.",
+      );
+    }
+    if (isNullOrUndefined(options.container)) {
+      throw new Error(
+        "You have to provide a `container` property to `renderThumbnail`, specifying the HTML Element in which the thumbnail should be inserted.",
+      );
+    }
     return renderThumbnail(this._priv_contentInfos, options);
   }
 
