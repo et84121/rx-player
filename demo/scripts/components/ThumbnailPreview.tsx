@@ -54,7 +54,7 @@ export default function ThumbnailPreview({
         parentElementRef.current.removeChild(videoElement);
       }
     };
-  }, [videoElement, showVideoThumbnail]);
+  }, [videoElement, showVideoThumbnail, parentElementRef]);
 
   React.useEffect(() => {
     if (!showVideoThumbnail) {
@@ -77,6 +77,16 @@ export default function ThumbnailPreview({
     // user quickly moves its pointer or whatever is calling this
     loadThumbnailTimeout = window.setTimeout(() => {
       loadThumbnailTimeout = null;
+
+      // There's two available ways of displaying thumbnails
+      //
+      // 1.   Through what's called a "trickmode track", which is a video track
+      //      only containing intra-frames. Such thumbnails are shown through a
+      //      video tag thanks the the `VideoThumbnailLoader` tool
+      //
+      // 2.   Through an especially-purposed "thumbnail track" in a Manifest
+      //      which usually is based on tiles of jpg/png images. Those are loadd
+      //      through specific RxPlayer method.
       if (showVideoThumbnail) {
         if (videoThumbnailLoader === null) {
           return;
