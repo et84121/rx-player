@@ -4,6 +4,7 @@ import { getPeriodForTime } from "../manifest";
 import type { IThumbnailRenderingOptions } from "../public_types";
 import type { IThumbnailResponse } from "../transports";
 import arrayFind from "../utils/array_find";
+import arrayFindIndex from "../utils/array_find_index";
 import TaskCanceller from "../utils/task_canceller";
 import type { IPublicApiContentInfos } from "./api/public_api";
 
@@ -138,14 +139,10 @@ export default async function renderThumbnail(
         "Cannot display thumbnail: cannot create canvas context",
       );
     }
-    let foundIdx: number | undefined;
-    for (let i = 0; i < res.thumbnails.length; i++) {
-      if (res.thumbnails[i].start <= time && res.thumbnails[i].end > time) {
-        foundIdx = i;
-        break;
-      }
-    }
-    if (foundIdx === undefined) {
+    const foundIdx = arrayFindIndex(res.thumbnails, (t) => {
+      return t.start <= time && t.end > time;
+    });
+    if (foundIdx < 0) {
       throw new Error("Cannot display thumbnail: time not found in fetched data");
     }
     const image = new Image();
