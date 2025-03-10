@@ -1103,7 +1103,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
       segmentSinkMetricsCallback: null,
       fetchThumbnailDataCallback: null,
       thumbnailRequestsInfo: {
-        pendingRequests: new Map(),
+        pendingRequests: new WeakMap(),
         lastResponse: null,
       },
     };
@@ -3525,7 +3525,7 @@ export interface IPublicApiContentInfos {
      * container.
      * The value allows to cancel that task.
      */
-    pendingRequests: Map<HTMLElement, TaskCanceller>;
+    pendingRequests: WeakMap<HTMLElement, TaskCanceller>;
     /**
      * Metadata about the last requested thumbnails.
      *
