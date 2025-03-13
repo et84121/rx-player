@@ -879,8 +879,8 @@ const DEFAULT_CONFIG = {
    */
   EME_DEFAULT_AUDIO_CODECS: [
     'audio/mp4;codecs="mp4a.40.2"',
-    '"audio/webm;codecs="opus"',
-    'audio/mp4; codecs="ec-3"',
+    'audio/webm;codecs="opus"',
+    'audio/mp4;codecs="ec-3"',
   ],
 
   /**
