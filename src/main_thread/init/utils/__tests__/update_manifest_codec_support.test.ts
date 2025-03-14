@@ -1,4 +1,5 @@
 import { beforeAll, describe, expect, it, vi } from "vitest";
+import type { IMediaElement } from "../../../../compat/browser_compatibility_types";
 import type {
   IManifestMetadata,
   IPeriodMetadata,
@@ -8,9 +9,9 @@ import type {
 import { ManifestMetadataFormat } from "../../../../manifest";
 
 import type { IContentProtections } from "../../../../parsers/manifest";
-import { updateManifestCodecSupport } from "../update_manifest_codec_support";
-import ContentDecryptor from "../../../decrypt";
 import sleep from "../../../../utils/sleep";
+import ContentDecryptor from "../../../decrypt";
+import { updateManifestCodecSupport } from "../update_manifest_codec_support";
 
 function generateFakeManifestWithRepresentations(
   videoRepresentations: IRepresentationMetadata[],
@@ -73,12 +74,13 @@ function generateFakeManifestWithRepresentations(
 }
 
 beforeAll(() => {
-  // Mock the `compat` module and override the export of _MediaSource
+  // Mock MediaSource APIs
   vi.mock("../../../../compat/browser_compatibility_types", () => ({
+    // eslint-disable-next-line @typescript-eslint/no-extraneous-class
     MediaSource_: class {
-      static isTypeSupported(type) {
-        // Mocked behavior: always return true for all codecs and false for vp9
-        return !type.includes("vp9");
+      static isTypeSupported(type: string) {
+        // Mocked behavior: return true for all codecs and return false for vp9 codec
+        return type.indexOf("vp9") === -1;
       }
     },
   }));
@@ -86,7 +88,7 @@ beforeAll(() => {
   // Mock EME APIs
   vi.mock("../../../../compat/eme/eme-api-implementation", () => ({
     default: {
-      requestMediaKeySystemAccess: function (
+      requestMediaKeySystemAccess(
         keyType: string,
         config: MediaKeySystemConfiguration[],
       ) {
@@ -122,7 +124,7 @@ beforeAll(() => {
         return;
       },
       setMediaKeys: (
-        _mediaElement: HTMLMediaElement,
+        _mediaElement: IMediaElement,
         _mediaKeys: unknown,
       ): Promise<unknown> => {
         return Promise.resolve();
