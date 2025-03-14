@@ -771,7 +771,7 @@ class Player extends EventEmitter<IPublicAPIEvent> {
   }: {
     time?: number | undefined;
     periodId?: string | undefined;
-  }): IThumbnailTrackInfo[] {
+  } = {}): IThumbnailTrackInfo[] {
     if (this._priv_contentInfos === null || this._priv_contentInfos.manifest === null) {
       return [];
     }
