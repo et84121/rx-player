@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from "url";
 import launchStaticServer from "../../scripts/launch_static_server.mjs";
 import removeDir from "../../scripts/utils/remove_dir.mjs";
 import createContentServer from "../contents/server.mjs";
-import { appendFileSync, rmSync, writeFileSync } from "fs";
+import { rmSync, writeFileSync } from "fs";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
@@ -170,115 +170,101 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
   })
     .then(() => runPerformanceTests())
     .then(async (results) => {
-      if (reportFile !== undefined) {
-        try {
-          writeFileSync(reportFile, "Tests results\n" + "-------------\n\n");
-          if (results.worse.length === 0) {
-            appendToReportFile("✅ Tests have passed.\n");
-          } else {
-            appendToReportFile("❌ Tests have failed.\n");
-          }
-          appendToReportFile(
-            "Performance tests 1st run output\n" + "--------------------------------",
-          );
-        } catch (err) {
-          console.error(
-            `Cannot write file output: Invalid file path given: ${reportFile}`,
-          );
-        }
-      }
-
+      /** Contain results on the second run if it is done */
+      let results2 = null;
       if (results.worse.length > 0) {
-        const failureTxt =
+        console.warn(
           "\nWorse performance for tests:\n\n" +
-          formatResultInHumanReadableWay(results.worse);
-        console.warn(failureTxt);
-        appendToReportFile(failureTxt);
+            formatResultAsMarkdownTable(results.worse),
+        );
       }
-
       if (results.better.length > 0) {
-        const betterTxt =
+        console.log(
           "\nBetter performance for tests:\n\n" +
-          formatResultInHumanReadableWay(results.better);
-        console.log(betterTxt);
-        appendToReportFile(betterTxt);
+            formatResultAsMarkdownTable(results.better),
+        );
       }
-
       if (results.notSignificative.length > 0) {
-        const notSignificativeTxt =
+        console.log(
           "\nNo significative change in performance for tests:\n\n" +
-          formatResultInHumanReadableWay(results.notSignificative);
-        console.log(notSignificativeTxt);
-        appendToReportFile(notSignificativeTxt);
+            formatResultAsMarkdownTable(results.notSignificative),
+        );
       }
 
       if (results.worse.length === 0) {
+        await writeHtmlReportIfneeded();
         process.exit(0);
       }
 
       console.warn("\nRetrying one time just to check if unlucky...");
 
-      const results2 = await runPerformanceTests();
+      results2 = await runPerformanceTests();
       console.error("\nFinal result after 2 attempts\n-----------------------------\n");
-      appendToReportFile(
-        "\nPerformance tests 2nd run output\n" + "--------------------------------",
-      );
 
       if (results.better.length > 0) {
         console.error(
           "\nBetter performance at first attempt for tests:\n\n" +
-            formatResultInHumanReadableWay(results.better),
+            formatResultAsMarkdownTable(results.better),
         );
       }
       if (results2.better.length > 0) {
-        const betterTxt =
-          "\nBetter performance for tests:\n\n" +
-          formatResultInHumanReadableWay(results.better);
-        appendToReportFile(betterTxt);
         console.error(
           "\nBetter performance at second attempt for tests:\n\n" +
-            formatResultInHumanReadableWay(results2.better),
+            formatResultAsMarkdownTable(results2.better),
         );
       }
 
       if (results.worse.length > 0) {
         console.error(
           "\nWorse performance at first attempt for tests:\n\n" +
-            formatResultInHumanReadableWay(results.worse),
+            formatResultAsMarkdownTable(results.worse),
         );
       }
       if (results2.worse.length > 0) {
-        const failureTxt =
+        console.warn(
           "\nWorse performance at second attempt for tests:\n\n" +
-          formatResultInHumanReadableWay(results.worse);
-        console.warn(failureTxt);
-        appendToReportFile(failureTxt);
-      }
-
-      if (results2.notSignificative.length > 0) {
-        const notSignificativeTxt =
-          "\nNo significative change in performance for tests:\n\n" +
-          formatResultInHumanReadableWay(results.notSignificative);
-        appendToReportFile(notSignificativeTxt);
+            formatResultAsMarkdownTable(results.worse),
+        );
       }
 
       for (const failure1 of results.worse) {
         if (results2.worse.some((r) => r.testName === failure1.testName)) {
+          await writeHtmlReportIfneeded();
           process.exit(1);
         }
       }
+      await writeHtmlReportIfneeded();
       process.exit(0);
 
-      function appendToReportFile(text) {
-        if (reportFile === undefined) {
-          return;
-        }
-        try {
-          appendFileSync(reportFile, text + "\n");
-        } catch (err) {
-          console.error(
-            `Cannot write file output: Invalid file path given: ${reportFile}`,
-          );
+      /**
+       * This script may optionally output an HTML report of tests results.
+       *
+       * Call this function before exiting so we'll produce that file if needed
+       * The returned Promise should never reject.
+       * @returns {Promise}
+       */
+      async function writeHtmlReportIfneeded() {
+        if (reportFile !== undefined) {
+          try {
+            let commitSha = await execCommandAndGetFirstOutput("git rev-parse HEAD");
+            if (commitSha) {
+              commitSha = commitSha.trim();
+            }
+            const htmlReport = formatHtmlReport({
+              success:
+                results.worse.length === 0 &&
+                (results2 === undefined ||
+                  results2 === null ||
+                  results2.worse.length === 0),
+              baseBranch: branchName,
+              commitSha,
+              firstRun: results,
+              secondRun: results2,
+            });
+            writeFileSync(reportFile, htmlReport);
+          } catch (err) {
+            console.error(`WARNING: Cannot write report: ${err.toString()}`);
+          }
         }
       }
     })
@@ -295,7 +281,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
  * @param {Array.<Object>} results
  * @returns {string}
  */
-function formatResultInHumanReadableWay(results) {
+function formatResultAsMarkdownTable(results) {
   if (results.length === 0) {
     return "";
   }
@@ -1127,6 +1113,112 @@ function execCommandAndGetFirstOutput(command) {
 }
 
 /**
+ * Format the given report object into an readable HTML string.
+ * @param {Object} reportObj
+ * @returns {string}
+ */
+function formatHtmlReport(reportObj) {
+  let str = "<div>\n";
+  str += "  <p>\n";
+  if (reportObj.success) {
+    str += "    ✅ Automated performance checks have passed ";
+  } else {
+    str += "    ❌ Automated performance checks have failed ";
+  }
+  if (reportObj.commitSha && reportObj.baseBranch) {
+    str += `on commit <code>${reportObj.commitSha}</code> with the base branch <code>${reportObj.baseBranch}</code>`;
+  }
+  str += ".\n";
+  str += "  </p>\n";
+  str += "  <details>\n";
+  str += "    <summary>Details</summary>\n\n";
+  str += "<h2>Performance tests 1st run output</h2>\n";
+
+  const { firstRun, secondRun } = reportObj;
+  if (firstRun.worse.length > 0) {
+    str += "\n<p>No significative change in performance for tests:</p>\n\n";
+    str += formatResultAsHtmlTable(firstRun.worse);
+  }
+
+  if (firstRun.better.length > 0) {
+    str += "\n<p>Better performance for tests:</p>\n\n";
+    str += formatResultAsHtmlTable(firstRun.better);
+  }
+
+  if (firstRun.notSignificative.length > 0) {
+    str += "\n<p>No significative change in performance for tests:</p>\n\n";
+    str += formatResultAsHtmlTable(firstRun.notSignificative);
+  }
+  str += "\n";
+
+  if (secondRun) {
+    str += "\n";
+    str += "<h2>Performance tests 2st run output</h2>\n";
+    if (secondRun.worse.length > 0) {
+      str += "\n<p>No significative change in performance for tests:</p>\n\n";
+      str += formatResultAsHtmlTable(secondRun.worse);
+    }
+
+    if (secondRun.better.length > 0) {
+      str += "\n<p>Better performance for tests:</p>\n\n";
+      str += formatResultAsHtmlTable(secondRun.better);
+    }
+
+    if (secondRun.notSignificative.length > 0) {
+      str += "\n<p>No significative change in performance for tests:</p>\n\n";
+      str += formatResultAsHtmlTable(secondRun.notSignificative);
+    }
+    str += "\n";
+  }
+  str += "  </details>\n";
+  str += "</div>";
+  return str;
+}
+
+/**
+ * Take test results as outputed by performance tests and output an HTML
+ * table listing them.
+ * @param {Array.<Object>} results
+ * @returns {string}
+ */
+function formatResultAsHtmlTable(results) {
+  if (results.length === 0) {
+    return "";
+  }
+  const testNames = results.map((r) => r.testName);
+  const meanResult = results.map(
+    (r) =>
+      `${r.previousMean.toFixed(2)}ms -> ${r.currentMean.toFixed(2)}ms ` +
+      `(${r.meanDifferenceMs.toFixed(3)}ms, z: ${r.zScore.toFixed(5)})`,
+  );
+  const medianResult = results.map(
+    (r) => `${r.previousMedian.toFixed(2)}ms -> ${r.currentMedian.toFixed(2)}ms`,
+  );
+
+  let str;
+  str = '<table role="table">\n';
+  str += "  <thead>\n";
+  str += "    <tr>\n";
+  str += "      <th>Name</th>\n";
+  str += "      <th>Mean</th>\n";
+  str += "      <th>Median</th>\n";
+  str += "    </tr>\n";
+  str += "  </thead>\n";
+  str += "  <tbody>\n";
+
+  for (let i = 0; i < results.length; i++) {
+    str += "    <tr>\n";
+    str += `      <td>${testNames[i]}</td>\n`;
+    str += `      <td>${meanResult[i]}</td>\n`;
+    str += `      <td>${medianResult[i]}</td>\n`;
+    str += "    </tr>\n";
+  }
+  str += "  </tbody>\n";
+  str += "</table>\n";
+  return str;
+}
+
+/**
  * Display through `console.log` an helping message relative to how to run this
  * script.
  */
@@ -1140,7 +1232,6 @@ Available options:
                                     Defaults to the "dev" branch.,
   -u <URL>, --remote-git-url <URL>  Specify the remote git URL where the current repository can be cloned from.
                                     Defaults to the current remote URL.
-  -r <path>, --report <path>        Optional path to markdown file where a report will be written in a
-                                    human-readable way once done.`,
+  -r <path>, --report <path>        Optional path to HTML file where a report will be written in once done.`,
   );
 }
