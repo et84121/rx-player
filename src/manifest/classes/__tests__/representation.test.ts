@@ -47,6 +47,9 @@ const minimalIndex: IRepresentationIndex = {
   canBeOutOfSyncError(): true {
     return true;
   },
+  getTargetSegmentDuration() {
+    return undefined;
+  },
   _replace() {
     return;
   },

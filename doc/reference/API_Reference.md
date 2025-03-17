@@ -397,6 +397,12 @@ events and so on.
   Returns information on which "mode" the current content is playing (e.g.:
   multithreading).
 
+- [`getAvailableThumbnailTracks`](../api/Thumbnails/getAvailableThumbnailTracks.md):
+  Returns the list of available thumbnail tracks for a specific position.
+
+- [`renderThumbnail`](../api/Thumbnails/renderThumbnail.md): Render a thumbnail
+  corresponding to a specific time.
+
 ## Static Properties
 
 - [`version`](../api/Static_Properties.md#version): The current version of the RxPlayer.
