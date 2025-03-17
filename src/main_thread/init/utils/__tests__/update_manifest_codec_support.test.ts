@@ -47,6 +47,7 @@ function generateFakeManifestWithRepresentations(
     id: "period1",
     start: 0,
     streamEvents: [],
+    thumbnailTracks: [],
   };
 
   const manifest: IManifestMetadata = {
