@@ -1,14 +1,16 @@
 # Changelog
 
-## Current dev build: v4.3.0-dev.2025030400
+## Current dev build: v4.3.0-dev.2025031700
 
 ### Features
 
 - Add the possibility to rely on `ManagedMediaSource` on iOS devices [#1562]
+- DASH: Implement DASH Thumbnail tracks by adding `renderThumbnail` and
+  `getAvailableThumbnailTracks` API [#1496]
 - DRM: Add `keySystems[].wantedSessionTypes` `loadVideo` option to also initialize a DRM
   config for future contents, not just the current one [#1604]
 - Add `experimentalOptions.enableRepresentationAvoidance` option to `loadVideo` to enable
-  the new Representation avoidance mechanism [#1523]
+  our new Representation avoidance mechanism [#1523]
 
 ### Bug fixes
 
@@ -17,6 +19,7 @@
 - Compat: On "FREEZING" try to un-freeze regardless of if the wanted position was reached
   to fix a remaining Tizen (Samsung) infinite rebuffering issue [#1586]
 - MULTI_THREAD: Fix error not being thrown on manifest update [#1653]
+- DRM: check that ec-3 codec is supported when encrypted [#1657]
 - DRM: fix typo which prevented `MediaKeys` reusage on some devices including desktop
   browsers [#1615]
 - DRM: Only ask for `"persistent-license"` `MediaKeySession` (and not also for
@@ -43,8 +46,10 @@
 - DRM: Reuse cache even if key system type given in API is not the same [#1611]
 - DEBUG_ELEMENT: Add buffer size estimate to debug buffer content graph [#1558]
 - DEBUG_ELEMENT: Add `hdr` information to video Representation [#1583]
+- Set LogFormat to `full` on RxPlayer's debug mode [#1625]
 - tests: Our performance-regression tests now run on all RxPlayer updates to better
   protect against performance regressions [#1630]
+- CI/tests: CI integration tests on Edge and windows [#1621]
 
 ## v4.2.0 (2024-10-17)
 
