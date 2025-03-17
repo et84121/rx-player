@@ -106,7 +106,7 @@ describe("find_key_systems - ", () => {
         robustness: "HW_SECURE_ALL",
       },
       {
-        contentType: "audio/webm;codecs=opus",
+        contentType: 'audio/webm;codecs="opus"',
         robustness: "HW_SECURE_ALL",
       },
       {
@@ -114,7 +114,7 @@ describe("find_key_systems - ", () => {
         robustness: "HW_SECURE_DECODE",
       },
       {
-        contentType: "audio/webm;codecs=opus",
+        contentType: 'audio/webm;codecs="opus"',
         robustness: "HW_SECURE_DECODE",
       },
       {
@@ -122,7 +122,7 @@ describe("find_key_systems - ", () => {
         robustness: "HW_SECURE_CRYPTO",
       },
       {
-        contentType: "audio/webm;codecs=opus",
+        contentType: 'audio/webm;codecs="opus"',
         robustness: "HW_SECURE_CRYPTO",
       },
       {
@@ -130,7 +130,7 @@ describe("find_key_systems - ", () => {
         robustness: "SW_SECURE_DECODE",
       },
       {
-        contentType: "audio/webm;codecs=opus",
+        contentType: 'audio/webm;codecs="opus"',
         robustness: "SW_SECURE_DECODE",
       },
       {
@@ -138,7 +138,7 @@ describe("find_key_systems - ", () => {
         robustness: "SW_SECURE_CRYPTO",
       },
       {
-        contentType: "audio/webm;codecs=opus",
+        contentType: 'audio/webm;codecs="opus"',
         robustness: "SW_SECURE_CRYPTO",
       },
     ],

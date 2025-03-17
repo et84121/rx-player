@@ -877,7 +877,11 @@ const DEFAULT_CONFIG = {
    * Defined in order of importance (first will be tested first etc.)
    * @type {Array.<string>}
    */
-  EME_DEFAULT_AUDIO_CODECS: ['audio/mp4;codecs="mp4a.40.2"', "audio/webm;codecs=opus"],
+  EME_DEFAULT_AUDIO_CODECS: [
+    'audio/mp4;codecs="mp4a.40.2"',
+    'audio/webm;codecs="opus"',
+    'audio/mp4;codecs="ec-3"',
+  ],
 
   /**
    * Robustnesses used in the {audio,video}Capabilities of the
