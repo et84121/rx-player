@@ -462,7 +462,7 @@ function getChangelogLines() {
         for (let i = 0; i < splitted.length; i += 2) {
           const mergeSubject = splitted[i];
           const mergeBody = splitted[i + 1];
-          const match = mergeSubject.match(/\ #\d+ /);
+          const match = mergeSubject.match(/ #\d+ /);
           if (match !== null) {
             const issueNumber = match[0].trim();
             linesToAdd.push(mergeBody.trim() + ` [${issueNumber}]`);
@@ -538,9 +538,7 @@ async function readChar(query) {
  * script.
  */
 function displayHelp() {
-  /* eslint-disable no-console */
   console.log(
-    /* eslint-disable indent */
     `update_changelog.mjs: Automatically update the CHANGELOG.md file.
 
 Usage: node update_changelog.mjs [OPTIONS] <VERSION>
@@ -548,7 +546,5 @@ Usage: node update_changelog.mjs [OPTIONS] <VERSION>
 Options:
 -h, --help             Display this help
 -d, --dev              This is for a development release`,
-    /* eslint-enable indent */
   );
-  /* eslint-enable no-console */
 }

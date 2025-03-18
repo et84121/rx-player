@@ -166,7 +166,6 @@ describe("MediaCapabilitiesProber probers - decodingInfo", () => {
     // @ts-expect-error: `navigator.mediaCapabilities` is read-only normally, for
     // now, we're going through JSDom through so that's OK.
     delete navigator.mediaCapabilities;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     await expect(probeDecodingInfos({})).rejects.toThrowError(
       "MediaCapabilitiesProber >>> API_CALL: MediaCapabilities API not available",
     );
@@ -182,7 +181,6 @@ describe("MediaCapabilitiesProber probers - decodingInfo", () => {
       // now, we're going through JSDom through so that's OK.
       navigator.mediaCapabilities = {};
     }
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     await expect(probeDecodingInfos({})).rejects.toThrowError(
       "MediaCapabilitiesProber >>> API_CALL: Decoding Info not available",
     );

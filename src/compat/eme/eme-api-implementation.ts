@@ -257,7 +257,6 @@ function getEmeApiImplementation(
             keySystemConfigurationResponse.audioCapabilities = audioCapabilities;
           }
 
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
           const customMediaKeys = createCustomMediaKeys(keyType);
           return Promise.resolve(
             new CustomMediaKeySystemAccess(

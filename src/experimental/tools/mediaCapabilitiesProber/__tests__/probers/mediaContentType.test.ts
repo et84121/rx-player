@@ -15,7 +15,6 @@ describe("MediaCapabilitiesProber - probers probeMediaContentType", () => {
     const probeMediaContentType = (
       await vi.importActual("../../probers/mediaContentType")
     ).default as typeof IProbeMediaContentType;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     await expect(probeMediaContentType({})).rejects.toThrowError(
       "MediaCapabilitiesProber >>> API_CALL: " + "MediaSource API not available",
     );
@@ -30,7 +29,6 @@ describe("MediaCapabilitiesProber - probers probeMediaContentType", () => {
     const probeMediaContentType = (
       await vi.importActual("../../probers/mediaContentType")
     ).default as typeof IProbeMediaContentType;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     await expect(probeMediaContentType({})).rejects.toThrowError(
       "MediaCapabilitiesProber >>> API_CALL: " + "isTypeSupported not available",
     );

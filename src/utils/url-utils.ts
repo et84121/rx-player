@@ -34,7 +34,7 @@ const schemeRe = /^(?:[a-z]+:)?\/\//i;
  * 5th match is the fragment (e.g "nose")
  * */
 const urlComponentRegex =
-  /^(?:([^:\/?#]+):)?(?:\/\/([^\/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?$/;
+  /^(?:([^:/?#]+):)?(?:\/\/([^/?#]*))?([^?#]*)(?:\?([^#]*))?(?:#(.*))?$/;
 
 /**
  * In a given URL, find the index at which the filename begins.
@@ -154,7 +154,7 @@ function getRelativeUrl(baseUrl: string, newUrl: string): string | null {
  * @param base
  * @param relative
  * @see https://datatracker.ietf.org/doc/html/rfc3986#section-5
- * @example base: http://example.com | relative: /b/c | output: http://example.com/b/c
+ * @example base: http://example.com | relative: /b/c | output: http://example.com/b/c
  * @returns the resolved url
  */
 function _resolveURL(base: string, relative: string) {

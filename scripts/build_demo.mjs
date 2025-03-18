@@ -162,6 +162,7 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
       case "--help":
         displayHelp();
         process.exit(0);
+        break;
       case "-w":
       case "--watch":
         shouldWatch = true;

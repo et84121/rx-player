@@ -42,7 +42,7 @@ export default function createContentServer(port = DEFAULT_CONTENT_SERVER_PORT) 
     if (typeof urlObj.path === "string") {
       try {
         data = fs.readFileSync(urlObj.path);
-      } catch (err) {
+      } catch (_err) {
         res.setHeader("Content-Type", "text/plain");
         answerWithCORS(res, 404, "404 Page Not Found");
         return;

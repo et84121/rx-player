@@ -1168,7 +1168,7 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
         case WorkerMessageType.LogMessage:
           // Already handled by prepare's handler
           break;
-        case WorkerMessageType.ThumbnailDataResponse:
+        case WorkerMessageType.ThumbnailDataResponse: {
           if (this._currentContentInfo?.contentId !== msgData.contentId) {
             return;
           }
@@ -1185,6 +1185,7 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
             log.error("MTCI: Failed to send segment sink store update");
           }
           break;
+        }
         default:
           assertUnreachable(msgData);
       }
@@ -2074,7 +2075,7 @@ function bindNumberReferencesToWorker(
         // overload, but the body here is not aware of that.
         sendMessage(worker, {
           type: MainThreadMessageType.ReferenceUpdate,
-          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any, @typescript-eslint/no-unsafe-call, @typescript-eslint/no-unsafe-member-access
+          // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment, @typescript-eslint/no-explicit-any
           value: { name: ref[1] as any, newVal: newVal as any },
         });
       },

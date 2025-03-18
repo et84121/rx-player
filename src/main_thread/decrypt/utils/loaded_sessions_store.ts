@@ -149,7 +149,7 @@ export default class LoadedSessionsStore {
    * @param {Object} mediaKeySession
    * @param {string|undefined} initializationDataType - Initialization data type
    * given e.g. by the "encrypted" event for the corresponding request.
-   * @param {Uint8Array} initializationData - Initialization data given e.g. by
+   * @param {Uint8Array} initializationData - Initialization data given e.g. by
    * the "encrypted" event for the corresponding request.
    * @returns {Promise}
    */

@@ -118,7 +118,6 @@ class WebkitMediaKeySession
         } else {
           uInt8Arraylicense = new Uint8Array(license.buffer);
         }
-        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
         resolve(this._nativeSession.update(uInt8Arraylicense));
       } catch (err) {
         reject(err);
@@ -150,7 +149,6 @@ class WebkitMediaKeySession
         throw new Error("Impossible to get the key sessions");
       }
       this._listenEvent(keySession);
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
       this._nativeSession = keySession;
       resolve();
     });
