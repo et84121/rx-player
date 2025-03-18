@@ -5,60 +5,63 @@ function getBrowserConfig(browser) {
     case "chrome":
       return {
         enabled: true,
-        name: "chrome",
         provider: "webdriverio",
-        headless: true,
         screenshotFailures: false,
-        providerOptions: {
-          capabilities: {
-            "goog:chromeOptions": {
-              args: [
-                "--autoplay-policy=no-user-gesture-required",
-                "--enable-precise-memory-info",
-                "--js-flags=--expose-gc",
-              ],
+        instances: [
+          {
+            browser: "chrome",
+            capabilities: {
+              "goog:chromeOptions": {
+                args: [
+                  "--autoplay-policy=no-user-gesture-required",
+                  "--enable-precise-memory-info",
+                  "--js-flags=--expose-gc",
+                ],
+              },
             },
           },
-        },
+        ],
       };
 
     case "firefox":
       return {
         enabled: true,
-        name: "firefox",
         provider: "webdriverio",
-        headless: true,
         screenshotFailures: false,
-        providerOptions: {
-          capabilities: {
-            "moz:firefoxOptions": {
-              prefs: {
-                "media.autoplay.default": 0,
-                "media.autoplay.enabled.user-gestures-needed": false,
-                "media.autoplay.block-webaudio": false,
-                "media.autoplay.ask-permission": false,
-                "media.autoplay.block-event.enabled": false,
-                "media.block-autoplay-until-in-foreground": false,
+        instances: [
+          {
+            browser: "firefox",
+            capabilities: {
+              "moz:firefoxOptions": {
+                prefs: {
+                  "media.autoplay.default": 0,
+                  "media.autoplay.enabled.user-gestures-needed": false,
+                  "media.autoplay.block-webaudio": false,
+                  "media.autoplay.ask-permission": false,
+                  "media.autoplay.block-event.enabled": false,
+                  "media.block-autoplay-until-in-foreground": false,
+                },
               },
             },
           },
-        },
+        ],
       };
 
     case "edge":
       return {
         enabled: true,
-        name: "edge",
         provider: "webdriverio",
-        headless: true,
         screenshotFailures: false,
-        providerOptions: {
-          capabilities: {
-            "ms:edgeOptions": {
-              args: ["--autoplay-policy=no-user-gesture-required"],
+        instances: [
+          {
+            browser: "edge",
+            capabilities: {
+              "ms:edgeOptions": {
+                args: ["--autoplay-policy=no-user-gesture-required"],
+              },
             },
           },
-        },
+        ],
       };
 
     default:
