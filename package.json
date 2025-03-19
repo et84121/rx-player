@@ -213,7 +213,7 @@
     "@types/react-dom": "19.0.3",
     "@typescript-eslint/eslint-plugin": "^8.24.0",
     "@typescript-eslint/parser": "^8.24.0",
-    "@vitest/browser": "^2.1.9",
+    "@vitest/browser": "^3.0.9",
     "core-js": "3.40.0",
     "cross-env": "^7.0.3",
     "esbuild": "0.25.0",
@@ -233,7 +233,7 @@
     "regenerator-runtime": "0.14.1",
     "semver": "7.7.1",
     "typescript": "5.7.3",
-    "vitest": "2.1.9",
+    "vitest": "3.0.9",
     "webdriverio": "9.9.0"
   },
   "scripts-list": {
