@@ -291,7 +291,7 @@ export default class ContentPreparer {
           ];
           for (const adaptation of checkedAdaptations) {
             for (const representation of adaptation.representations) {
-              const codec = representation.codecs[0];
+              const codec = `${representation.mimeType};codecs="${representation.codecs[0]}"`;
               if (codecsMap.has(codec)) {
                 representation.isCodecSupportedInWebWorker = codecsMap.get(codec);
               } else {
