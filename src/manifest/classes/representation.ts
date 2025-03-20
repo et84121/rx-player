@@ -121,7 +121,6 @@ class Representation implements IRepresentationMetadata {
    * `Manifest` methods for this.
    */
   public shouldBeAvoided: boolean;
-
   /** If the codec is supported with MSE in worker */
   public isCodecSupportedInWebWorker: boolean | undefined;
 
