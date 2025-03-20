@@ -122,6 +122,9 @@ class Representation implements IRepresentationMetadata {
    */
   public shouldBeAvoided: boolean;
 
+  /** If the codec is supported with MSE in worker */
+  public isCodecSupportedInWebWorker: boolean | undefined;
+
   /**
    * @param {Object} args
    * @param {string} trackType
@@ -484,6 +487,7 @@ class Representation implements IRepresentationMetadata {
       hdrInfo: this.hdrInfo,
       contentProtections: this.contentProtections,
       decipherable: this.decipherable,
+      isCodecSupportedInWebWorker: this.isCodecSupportedInWebWorker,
     };
   }
 }

@@ -131,6 +131,11 @@ export function updateManifestCodecSupport(
       let hasSupportedCodec: boolean = false;
       let hasCodecWithUndefinedSupport: boolean = false;
       adaptation.representations.forEach((representation) => {
+        if (representation.isCodecSupportedInWebWorker === false) {
+          representation.isSupported = false;
+          return;
+        }
+
         if (representation.isSupported !== undefined) {
           if (representation.isSupported) {
             hasSupportedCodec = true;
