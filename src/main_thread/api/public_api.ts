@@ -1725,7 +1725,6 @@ class Player extends EventEmitter<IPublicAPIEvent> {
     }
 
     const playPromise = this.videoElement.play();
-    // eslint-disable-next-line @typescript-eslint/unbound-method
     if (isNullOrUndefined(playPromise) || typeof playPromise.catch !== "function") {
       return Promise.resolve();
     }

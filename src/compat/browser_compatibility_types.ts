@@ -441,7 +441,6 @@ const MediaSource_:
 
 const isManagedMediaSource =
   MediaSource_ !== undefined && MediaSource_ === gs?.ManagedMediaSource;
-/* eslint-enable */
 
 /** List an HTMLMediaElement's possible values for its readyState property. */
 const READY_STATES = {

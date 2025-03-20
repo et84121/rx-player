@@ -66,7 +66,6 @@ RxPlayer.addFeatures([
 
 declare const __INCLUDE_WASM_PARSER__: boolean;
 
-// eslint-disable-next-line no-undef
 if (__INCLUDE_WASM_PARSER__) {
   RxPlayer.addFeatures([DASH_WASM]);
   DASH_WASM.initialize({ wasmUrl: "./mpd-parser.wasm" }).catch((err) => {

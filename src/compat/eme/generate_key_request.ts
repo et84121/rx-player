@@ -120,11 +120,11 @@ export function patchInitData(initData: Uint8Array): Uint8Array {
 
 /**
  * Generate a request from session.
- * @param {MediaKeySession} session - MediaKeySession on which the request will
+ * @param {MediaKeySession} session - MediaKeySession on which the request will
  * be done.
  * @param {string} initializationDataType - Initialization data type given e.g.
  * by the "encrypted" event for the corresponding request.
- * @param {Uint8Array} initializationData - Initialization data given e.g. by
+ * @param {Uint8Array} initializationData - Initialization data given e.g. by
  * the "encrypted" event for the corresponding request.
  * @returns {Promise} - Emit when done. Errors if fails.
  */

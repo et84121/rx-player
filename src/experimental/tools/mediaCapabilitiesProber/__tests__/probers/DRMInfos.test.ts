@@ -11,7 +11,6 @@ describe("MediaCapabilitiesProber probers - DRMInfos", () => {
     const configuration = {};
     const probeDRMInfos = (await vi.importActual("../../probers/DRMInfos"))
       .default as typeof IProbeDRMInfos;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     await expect(probeDRMInfos(configuration)).rejects.toEqual(
       "MediaCapabilitiesProber >>> API_CALL: " +
         "Missing a type argument to request a media key system access.",
@@ -24,7 +23,6 @@ describe("MediaCapabilitiesProber probers - DRMInfos", () => {
     };
     const probeDRMInfos = (await vi.importActual("../../probers/DRMInfos"))
       .default as typeof IProbeDRMInfos;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     await expect(probeDRMInfos(configuration)).rejects.toEqual(
       "MediaCapabilitiesProber >>> API_CALL: " +
         "Missing a type argument to request a media key system access.",
@@ -42,7 +40,6 @@ describe("MediaCapabilitiesProber probers - DRMInfos", () => {
     }));
     const probeDRMInfos = (await vi.importActual("../../probers/DRMInfos"))
       .default as typeof IProbeDRMInfos;
-    // eslint-disable-next-line @typescript-eslint/no-floating-promises
     await expect(probeDRMInfos(configuration)).resolves.toEqual([
       ProberStatus.NotSupported,
       { configuration: {}, type: "clearkick" },

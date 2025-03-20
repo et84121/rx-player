@@ -276,7 +276,6 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
         try {
           appendFileSync(reportFile, text + "\n");
         } catch (err) {
-          /* eslint-disable-next-line no-console */
           console.error(
             `Cannot write file output: Invalid file path given: ${reportFile}`,
           );

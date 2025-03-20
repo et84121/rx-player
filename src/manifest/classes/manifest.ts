@@ -601,7 +601,7 @@ export default class Manifest
     const adaptationsByType = firstPeriod.adaptations;
     const adaptationsList: Adaptation[] = [];
     for (const adaptationType in adaptationsByType) {
-      if (adaptationsByType.hasOwnProperty(adaptationType)) {
+      if (Object.prototype.hasOwnProperty.call(adaptationsByType, adaptationType)) {
         const adaptations = adaptationsByType[
           adaptationType as ITrackType
         ] as Adaptation[];

@@ -41,10 +41,10 @@ if (import.meta.url === pathToFileURL(process.argv[1]).href) {
     const currentArg = args[argOffset];
     switch (currentArg) {
       case "-h":
-      case "--help": {
+      case "--help":
         displayHelp();
         process.exit(0);
-      }
+        break;
 
       case "-d":
       case "--directory":
