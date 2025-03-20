@@ -49,8 +49,5 @@ jobs:
               repo: context.repo.repo,
               // TODO: generate comment header inside the report file instead of here for better portability?
               // We should already have access to the sha1 through `git` and the destination branch through the command line arguments.
-              body: "Automated performance checks have been performed on commit " +
-                    "\`${{github.event.pull_request.head.sha}}\` with the base branch \`${{github.base_ref}}\`.\n\n" +
-                    fileContent +
-                    "\n\n If you want to skip performance checks for latter commits, add the `skip-performance-checks` label to this Pull Request.",
+              body: fileContent,
             })
