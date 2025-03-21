@@ -63,6 +63,7 @@ export function getCodecsWithUnknownSupport(
 export function updateManifestCodecSupport(
   manifest: IManifestMetadata,
   contentDecryptor: ContentDecryptor | null,
+  isPlayingWithMSEinWorker: boolean,
 ): ICodecSupportInfo[] {
   const codecSupportMap: Map<
     string,
@@ -131,7 +132,10 @@ export function updateManifestCodecSupport(
       let hasSupportedCodec: boolean = false;
       let hasCodecWithUndefinedSupport: boolean = false;
       adaptation.representations.forEach((representation) => {
-        if (representation.isCodecSupportedInWebWorker === false) {
+        if (
+          representation.isCodecSupportedInWebWorker === false &&
+          isPlayingWithMSEinWorker
+        ) {
           representation.isSupported = false;
           return;
         }

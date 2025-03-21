@@ -273,37 +273,6 @@ export default class ContentPreparer {
       );
       manifestFetcher.start();
 
-      /**
-       * Set Representation.isCodecSupportedInWebWorker to true or false
-       * If the codec is supported in the current context.
-       * If MSE in worker is not available, the attribute is not set.
-       */
-      function updateCodecSupportInWorkerMode(manifestToUpdate: Manifest) {
-        if (isNullOrUndefined(MediaSource_)) {
-          return;
-        }
-
-        const codecsMap = new Map<string, boolean>();
-        for (const period of manifestToUpdate.periods) {
-          const checkedAdaptations = [
-            ...(period.adaptations.video ?? []),
-            ...(period.adaptations.audio ?? []),
-          ];
-          for (const adaptation of checkedAdaptations) {
-            for (const representation of adaptation.representations) {
-              const codec = `${representation.mimeType};codecs="${representation.codecs[0]}"`;
-              if (codecsMap.has(codec)) {
-                representation.isCodecSupportedInWebWorker = codecsMap.get(codec);
-              } else {
-                const supported = MediaSource_.isTypeSupported(codec);
-                representation.isCodecSupportedInWebWorker = supported;
-                codecsMap.set(codec, supported);
-              }
-            }
-          }
-        }
-      }
-
       function checkIfReadyAndValidate() {
         if (
           manifest === null ||
@@ -567,4 +536,35 @@ function createMediaSourceInterfaceAndSegmentSinksStore(
   });
 
   return [mediaSourceInterface, segmentSinksStore, textSender];
+}
+
+/**
+ * Set Representation.isCodecSupportedInWebWorker to true or false
+ * If the codec is supported in the current context.
+ * If MSE in worker is not available, the attribute is not set.
+ */
+function updateCodecSupportInWorkerMode(manifestToUpdate: Manifest) {
+  if (isNullOrUndefined(MediaSource_)) {
+    return;
+  }
+
+  const codecsMap = new Map<string, boolean>();
+  for (const period of manifestToUpdate.periods) {
+    const checkedAdaptations = [
+      ...(period.adaptations.video ?? []),
+      ...(period.adaptations.audio ?? []),
+    ];
+    for (const adaptation of checkedAdaptations) {
+      for (const representation of adaptation.representations) {
+        const codec = `${representation.mimeType};codecs="${representation.codecs[0]}"`;
+        if (codecsMap.has(codec)) {
+          representation.isCodecSupportedInWebWorker = codecsMap.get(codec);
+        } else {
+          const supported = MediaSource_.isTypeSupported(codec);
+          representation.isCodecSupportedInWebWorker = supported;
+          codecsMap.set(codec, supported);
+        }
+      }
+    }
+  }
 }
