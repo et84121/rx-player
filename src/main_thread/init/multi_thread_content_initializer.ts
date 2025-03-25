@@ -1413,7 +1413,7 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
       const updatedCodecs = updateManifestCodecSupport(
         manifest,
         this._currentContentInfo?.contentDecryptor ?? null,
-        this._settings.worker && hasMseInWorker,
+        hasMseInWorker,
       );
       if (updatedCodecs.length > 0) {
         sendMessage(this._settings.worker, {
