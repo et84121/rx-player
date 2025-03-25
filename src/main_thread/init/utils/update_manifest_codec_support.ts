@@ -56,9 +56,10 @@ export function getCodecsWithUnknownSupport(
  * Because probing for codec support is always synchronous in the main thread,
  * calling this function ensures that support is now known.
  *
- * @param {Object} manifest
- * @param {Object|null} contentDecryptor
- * @returns {boolean}
+ * @param {Object} manifest - The manifest to update
+ * @param {Object|null} contentDecryptor - The current content decryptor
+ * @param {boolean} isPlayingWithMSEinWorker - True if WebWorker is used with MSE in worker
+ * @returns {Array.<Object>}
  */
 export function updateManifestCodecSupport(
   manifest: IManifestMetadata,
