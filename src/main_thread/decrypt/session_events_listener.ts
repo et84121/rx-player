@@ -111,23 +111,23 @@ export default function SessionEventsListener(
         () => runGetLicense(message, messageType),
         backoffOptions,
         manualCanceller.signal,
-      )
-        .then((licenseObject) => {
+      ).then(
+        async (licenseObject) => {
           if (manualCanceller.isUsed()) {
-            return Promise.resolve();
+            return;
           }
           if (isNullOrUndefined(licenseObject)) {
             log.info("DRM: No license given, skipping session.update");
           } else {
             try {
-              return updateSessionWithMessage(session, licenseObject);
+              await updateSessionWithMessage(session, licenseObject);
             } catch (err) {
               manualCanceller.cancel();
               callbacks.onError(err);
             }
           }
-        })
-        .catch((err: unknown) => {
+        },
+        (err: unknown) => {
           if (manualCanceller.isUsed()) {
             return;
           }
@@ -148,7 +148,8 @@ export default function SessionEventsListener(
             }
           }
           callbacks.onError(formattedError);
-        });
+        },
+      );
     },
     manualCanceller.signal,
   );
