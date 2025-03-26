@@ -1,7 +1,9 @@
+import { MediaSource_ } from "../../../compat/browser_compatibility_types";
 import features from "../../../features";
 import log from "../../../log";
 import type { IManifest, IManifestMetadata } from "../../../manifest";
 import { createRepresentationFilterFromFnString } from "../../../manifest";
+import type Manifest from "../../../manifest/classes";
 import type { IMediaSourceInterface } from "../../../mse";
 import MainMediaSourceInterface from "../../../mse/main_media_source_interface";
 import WorkerMediaSourceInterface from "../../../mse/worker_media_source_interface";
@@ -13,6 +15,7 @@ import { WorkerMessageType } from "../../../multithread_types";
 import type { IPlayerError } from "../../../public_types";
 import assert from "../../../utils/assert";
 import idGenerator from "../../../utils/id_generator";
+import isNullOrUndefined from "../../../utils/is_null_or_undefined";
 import objectAssign from "../../../utils/object_assign";
 import type {
   CancellationError,
@@ -278,7 +281,7 @@ export default class ContentPreparer {
         ) {
           return;
         }
-
+        updateCodecSupportInWorkerMode(manifest);
         const sentManifest = manifest.getMetadataSnapshot();
         manifest.addEventListener(
           "manifestUpdate",
@@ -533,4 +536,35 @@ function createMediaSourceInterfaceAndSegmentSinksStore(
   });
 
   return [mediaSourceInterface, segmentSinksStore, textSender];
+}
+
+/**
+ * Set Representation.isCodecSupportedInWebWorker to true or false
+ * If the codec is supported in the current context.
+ * If MSE in worker is not available, the attribute is not set.
+ */
+function updateCodecSupportInWorkerMode(manifestToUpdate: Manifest) {
+  if (isNullOrUndefined(MediaSource_)) {
+    return;
+  }
+
+  const codecsMap = new Map<string, boolean>();
+  for (const period of manifestToUpdate.periods) {
+    const checkedAdaptations = [
+      ...(period.adaptations.video ?? []),
+      ...(period.adaptations.audio ?? []),
+    ];
+    for (const adaptation of checkedAdaptations) {
+      for (const representation of adaptation.representations) {
+        const codec = `${representation.mimeType};codecs="${representation.codecs[0]}"`;
+        if (codecsMap.has(codec)) {
+          representation.isCodecSupportedInWebWorker = codecsMap.get(codec);
+        } else {
+          const supported = MediaSource_.isTypeSupported(codec);
+          representation.isCodecSupportedInWebWorker = supported;
+          codecsMap.set(codec, supported);
+        }
+      }
+    }
+  }
 }

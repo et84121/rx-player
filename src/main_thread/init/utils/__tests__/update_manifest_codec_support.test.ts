@@ -193,7 +193,7 @@ describe("init - utils - updateManifestCodecSupport", () => {
       },
     };
     const contentDecryptor = new ContentDecryptor(video, [keySystem1]);
-    updateManifestCodecSupport(manifest, contentDecryptor);
+    updateManifestCodecSupport(manifest, contentDecryptor, true);
     expect(representationAVC.isSupported).toBe(true);
     expect(representationHEVC.isSupported).toBe(true);
     expect(representationVP9.isSupported).toBe(false); // Not Supported by MSE
@@ -274,11 +274,53 @@ describe("init - utils - updateManifestCodecSupport", () => {
     const contentDecryptor = new ContentDecryptor(video, [keySystem1]);
     await sleep(100);
     contentDecryptor.attach();
-    updateManifestCodecSupport(manifest, contentDecryptor);
+    updateManifestCodecSupport(manifest, contentDecryptor, true);
     expect(encryptedRepresentationAVC.isSupported).toBe(true);
     expect(encryptedRepresentationHEVC.isSupported).toBe(false); // Not supported by EME
     expect(encryptedRepresentationVP9.isSupported).toBe(false); // Not supported by MSE
     expect(encryptedRepresentationMP4A.isSupported).toBe(true);
     expect(encryptedRepresentationEC3.isSupported).toBe(false); // Not supported by EME
+  });
+
+  it("should update to false if the codec is not usable with MSE in worker", () => {
+    const representationAVC: IRepresentationMetadata = {
+      bitrate: 1000,
+      id: "representation1",
+      uniqueId: "representation1",
+      codecs: ["avc1.4d401e"],
+      mimeType: "video/mp4",
+      isSupported: undefined,
+      isCodecSupportedInWebWorker: undefined,
+    };
+    const representationHEVC: IRepresentationMetadata = {
+      bitrate: 2000,
+      id: "representation2",
+      uniqueId: "representation2",
+      codecs: ["hvc1.2.4.L153.B0"],
+      mimeType: "video/mp4",
+      isSupported: undefined,
+      isCodecSupportedInWebWorker: false,
+    };
+
+    const representationMP4A: IRepresentationMetadata = {
+      bitrate: 1000,
+      id: "representation4",
+      uniqueId: "representation4",
+      codecs: ["mp4a.40.2"],
+      mimeType: "audio/mp4",
+      isSupported: undefined,
+      isCodecSupportedInWebWorker: true,
+    };
+    const manifest = generateFakeManifestWithRepresentations(
+      [representationAVC, representationHEVC],
+      [representationMP4A],
+    );
+
+    const video = document.createElement("video");
+    const contentDecryptor = new ContentDecryptor(video, []);
+    updateManifestCodecSupport(manifest, contentDecryptor, true);
+    expect(representationAVC.isSupported).toBe(true);
+    expect(representationHEVC.isSupported).toBe(false); // not supported with MSE in worker
+    expect(representationMP4A.isSupported).toBe(true);
   });
 });

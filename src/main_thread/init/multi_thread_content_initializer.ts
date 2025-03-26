@@ -1,4 +1,5 @@
 import type { IMediaElement } from "../../compat/browser_compatibility_types";
+import hasMseInWorker from "../../compat/has_mse_in_worker";
 import mayMediaElementFailOnUndecipherableData from "../../compat/may_media_element_fail_on_undecipherable_data";
 import shouldReloadMediaSourceOnDecipherabilityUpdate from "../../compat/should_reload_media_source_on_decipherability_update";
 import type { ISegmentSinkMetrics } from "../../core/segment_sinks/segment_sinks_store";
@@ -1412,6 +1413,7 @@ export default class MultiThreadContentInitializer extends ContentInitializer {
       const updatedCodecs = updateManifestCodecSupport(
         manifest,
         this._currentContentInfo?.contentDecryptor ?? null,
+        hasMseInWorker,
       );
       if (updatedCodecs.length > 0) {
         sendMessage(this._settings.worker, {

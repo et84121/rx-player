@@ -488,4 +488,6 @@ export interface IRepresentationMetadata {
   decipherable?: boolean | undefined;
   /** Encryption information for this Representation. */
   contentProtections?: IContentProtections | undefined;
+  /** If the codec is supported with MSE in worker */
+  isCodecSupportedInWebWorker?: boolean | undefined;
 }
